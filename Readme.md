@@ -1,19 +1,24 @@
 # TCL on Rails
 
-- jobs (cron?)
+### TODO
+- jobs 
+	- cron?
 - controllers
-	- filters
-	- render method
+	- filters -> ok
+	- render method -> ok
 	- scaffold implementation
 	- template implementation
+- http server
 	- render json
-- websocket
-- workers
+	- render template
+	- websocket
+	- workers
 - models
 	- use inherits props
 	- to_json
 	- from_json
 	- json template
+	- active record?
 - cli
 	- create scaffold <model name> <fields>
 	- create model 	<model name> <fields>

@@ -1,0 +1,113 @@
+package require tcltest
+
+set trailsdir [expr {[file exists "./trails"] == 1 ? "./trails" : "./"}]
+
+source $trailsdir/configs/configs.tcl
+source $trailsdir/http/router.tcl
+source $trailsdir/http/request.tcl
+source $trailsdir/http/response.tcl
+source $trailsdir/tests/extra/dummy_controller.tcl
+
+namespace import ::tcltest::*
+namespace import ::controllers::DummyController
+namespace import ::trails::http::Request
+namespace import ::trails::http::router::Route
+
+
+set ::env(ENV) test
+::trails::configs::init_with_file $trailsdir/tests/extra/application.yaml
+
+proc setup {} {
+}
+
+proc cleanup {} {
+}
+
+
+test dummy_controller_index_override_test {} -body { 
+	set dummy [DummyController new]
+	set request [Request new]	
+	set response [$dummy dispatch_action index $request]
+	$response prop body 
+} -result {index override}
+
+test dummy_controller_save_test {} -body { 
+	set dummy [DummyController new]
+	set request [Request new]	
+	set response [$dummy dispatch_action save $request]
+	$response prop body
+} -result {save}
+
+test dummy_controller_edit_test {} -body { 
+	set dummy [DummyController new]
+	set request [Request new]	
+	set response [$dummy dispatch_action edit $request]
+	$response prop body 
+} -result {edit}
+
+test dummy_controller_show_test {} -body { 
+	set dummy [DummyController new]
+	set request [Request new]	
+	set response [$dummy dispatch_action show $request]
+	$response prop body 
+} -result {show}
+
+test dummy_controller_update_test {} -body { 
+	set dummy [DummyController new]
+	set request [Request new]	
+	set response [$dummy dispatch_action update $request]
+	$response prop body 
+} -result {update}
+
+test dummy_controller_delete_test {} -body { 
+	set dummy [DummyController new]
+	set request [Request new]	
+	set response [$dummy dispatch_action delete $request]
+	$response prop body 
+} -result {delete}
+
+test dummy_controller_custom_test {} -body { 
+	set dummy [DummyController new]
+	set request [Request new]	
+	set response [$dummy dispatch_action custom $request]
+	$response prop status 
+} -result {200}
+
+test dummy_controller_not_found_test {} -body { 
+	set dummy [DummyController new -scaffold false]
+	set request [Request new]	
+	set response [$dummy dispatch_action delete $request]	
+	$response prop status
+} -result {404}
+
+test dummy_controller_not_allowed_method {} -body { 
+	set dummy [DummyController new -scaffold false --allowed_methods {delete delete}]
+	set request [Request new -method get]	
+	set response [$dummy dispatch_action delete $request]	
+	$response prop status
+} -result {405}
+
+test dummy_controller_allowed_method {} -body { 
+	set dummy [DummyController new -scaffold true --allowed_methods {delete delete,get}]
+	set request [Request new -method get]	
+	set response [$dummy dispatch_action delete $request]	
+	$response prop status
+} -result {200}
+
+test dummy_controller_routes {} -body { 
+	set dummy [DummyController new -scaffold true --allowed_methods {delete delete,get}]
+	set routes [$dummy get_routes]
+	llength $routes
+} -result {16}
+
+
+test dummy_controller_build_routes {} -body { 
+	set dummy [DummyController new -scaffold true --route_prefix {}]
+	set routes [$dummy get_routes]
+	::trails::http::router::build_scaffold_routes $routes
+	#::trails::http::router::print
+	set route [::trails::http::router::match /dummy get]
+	expr {$route != ""}
+} -result {1}
+
+cleanupTests

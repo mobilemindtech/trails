@@ -1,0 +1,93 @@
+---
+
+web:
+  server:
+    port: 5151
+    workers: 1
+
+  templates: ./public/templates
+  assets: ./public/assets
+
+  authenticator:
+    secret: d00K3R$w@@rm33!$$
+    url: https://authenticatorapi.com/
+    enabled: true
+
+  jwt:
+    secret: 12345678910A
+
+  credentials:
+    username: test
+    password: test
+
+  routes:
+    - path: /
+      handler: index_handler::index
+      roles: 
+      methods: get
+      
+    - path: /app/login
+      handler: index_handler::index
+      roles: 
+      methods: get
+    
+    - path: /login
+      handler: login_handler::auth
+      roles: 
+      methods: post
+    
+    - path: /api
+      before:
+        - login_handler::auth_token
+      roles: admin,root
+      routes:  
+      - path: /authenticator
+        routes:
+        - path: /enabled
+          methods: get
+          handler: api_authenticator_handler::enabled?
+          roles: 
+    
+        - path: /pair
+          methods: get
+          handler: api_authenticator_handler::pair
+          roles: admin,root
+    - path: /ws
+      handler: 
+      before: 
+      roles: admin,root
+      methods: get
+      websocket: true
+
+  websocket:
+    handler: websocket_handler::handle
+    handler_msg: 
+
+datasource:
+  dev:
+    show_sql: true
+    pool_size: 1
+    database:
+      db: mydb_dev
+      user: root
+      password: 131054
+      host: localhost
+      port: 3306
+  test:
+    show_sql: false
+    pool_size: 1
+    database:
+      db: mydb_test
+      user: root
+      password: 131054
+      host: localhost
+      port: 3306
+  prod:
+    show_sql: false
+    pool_size: 1
+    database:
+      db: mydb_prod
+      user: root
+      password: 131054
+      host: localhost
+      port: 3306

@@ -1,0 +1,24 @@
+package require tcltest
+
+set trailsdir [expr {[file exists "./trails"] == 1 ? "./trails" : "./"}]
+
+source $trailsdir/misc/util.tcl
+
+namespace import ::tcltest::*
+
+test util_get_def_test_ok {} -body {
+
+	set d [dict create x 1]
+	::trails::misc::util::get_def $d x -1
+
+} -result 1
+
+test util_get_def_test_default {} -body {
+
+	set d [dict create x 1]
+	::trails::misc::util::get_def $d y 1
+
+} -result 1
+
+
+cleanupTests

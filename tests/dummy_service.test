@@ -1,0 +1,85 @@
+
+package require tcltest
+
+set trailsdir [expr {[file exists "./trails"] == 1 ? "./trails" : "./"}]
+
+source $trailsdir/configs/configs.tcl
+source $trailsdir/database/db.tcl
+source $trailsdir/database/migrations.tcl
+source $trailsdir/services/service.tcl
+source $trailsdir/tests/extra/dummy_service.tcl
+
+namespace import ::tcltest::*
+
+set ::env(ENV) test
+::trails::configs::init_with_file $trailsdir/tests/extra/application.yaml
+
+proc setup {} {
+	::trails::database::db::exec {DROP TABLE IF EXISTS person}
+	::trails::database::db::exec {DROP TABLE IF EXISTS migrations}	
+	::trails::database::migrations::run
+}
+
+proc cleanup {} {
+}
+
+test dummy_service_save {} -setup { setup } -cleanup { cleanup } -body {
+		
+		set dummy [::services::DummyService new]
+		set result [$dummy save {id 1 name ricardo}]
+		dict get $result id
+
+	} -result 1
+
+test dummy_service_update {} -setup { setup } -cleanup { cleanup } -body {
+		
+		set dummy [::services::DummyService new]
+		set result [$dummy save {name ricardo}]
+		
+		dict set result name jonh
+		$dummy update $result
+
+		$dummy get [dict get $result id]
+
+	} -result {id 1 name jonh}
+
+test dummy_service_delete {} -setup { setup } -cleanup { cleanup } -body {
+		
+		set dummy [::services::DummyService new]
+		set result [$dummy save {name ricardo}]
+		
+		dict set result name jonh
+		$dummy delete $result
+
+		$dummy get [dict get $result id]
+
+	} -result {}
+
+test dummy_service_find_all {} -setup { setup } -cleanup { cleanup } -body {
+		
+		set dummy [::services::DummyService new]
+		$dummy save {name ricardo}
+		$dummy save {name john}
+		$dummy save {name angelina}
+		$dummy save {name will}
+		$dummy save {name chico}
+		
+		set results [$dummy find_all]
+		llength $results
+
+	} -result 5
+
+test dummy_service_count {} -setup { setup } -cleanup { cleanup } -body {
+		
+		set dummy [::services::DummyService new]
+		$dummy save {name ricardo}
+		$dummy save {name john}
+		$dummy save {name angelina}
+		$dummy save {name will}
+		$dummy save {name chico}
+		
+		$dummy count
+
+	} -result 5	
+
+cleanupTests

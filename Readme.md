@@ -1,0 +1,22 @@
+# TCL on Rails
+
+- jobs (cron?)
+- controllers
+	- filters
+	- render method
+	- scaffold implementation
+	- template implementation
+	- render json
+- websocket
+- workers
+- models
+	- use inherits props
+	- to_json
+	- from_json
+	- json template
+- cli
+	- create scaffold <model name> <fields>
+	- create model 	<model name> <fields>
+	- create controller -model <model name>
+	- create service -model <model name>
+	- create templates -model <model name>

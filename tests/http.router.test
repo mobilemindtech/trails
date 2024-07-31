@@ -1,0 +1,34 @@
+package require tcltest
+
+set trailsdir [expr {[file exists "./trails"] == 1 ? "./trails" : "./"}]
+
+source $trailsdir/configs/configs.tcl
+source $trailsdir/http/router.tcl
+
+namespace import ::tcltest::*
+
+set ::env(ENV) test
+::trails::configs::init_with_file $trailsdir/tests/extra/application.yaml
+
+proc setup {} {
+}
+
+proc cleanup {} {
+}
+
+test router_not_found {} -setup { setup } -cleanup { cleanup } -body {
+	
+		::trails::http::router::build_config_routes 
+		::trails::http::router::match /aa get
+	
+	} -result {}
+
+test router_found {} -setup { setup } -cleanup { cleanup } -body {
+	
+		::trails::http::router::build_config_routes 
+		set route [::trails::http::router::match / get]
+		$route prop repath
+	
+	} -result {^(/?)$}	
+
+cleanupTests	

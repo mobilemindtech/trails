@@ -48,6 +48,26 @@ namespace eval ::controllers  {
 		method custom {request} {
 			Response new -status 200 -body {custom action}
 		}
+
+		method withrender {request} {
+			my render -status 200 -text {withrender}
+		}
+
+		method list1 {request} {
+			return {200 list1 text/plain}
+		}
+
+		method list2 {request} {
+			return {text list2}
+		}
+
+		method withjson {request} {
+			return {json {[{"x": 3}]}}
+		}
+
+		method withhtml {request} {
+			return {html {<html><body><h1>hello, trails!</h1></body></html>}}
+		}		
 	}
 
 

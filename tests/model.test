@@ -1,0 +1,60 @@
+package require tcltest
+package require TclOO
+
+set trailsdir [expr {[file exists "./trails"] == 1 ? "./trails" : "./"}]
+
+source $trailsdir/configs/configs.tcl
+source $trailsdir/models/active_record.tcl
+source $trailsdir/database/migrations.tcl
+
+namespace import ::tcltest::*
+
+namespace import ::trails::models::ActiveRecord 
+
+
+set ::env(ENV) test
+::trails::configs::init_with_file $trailsdir/tests/extra/application.yaml
+
+proc setup {} {
+	::trails::database::db::exec {DROP TABLE IF EXISTS person}
+	::trails::database::db::exec {DROP TABLE IF EXISTS migrations}	
+	::trails::database::migrations::run
+}
+
+
+oo::class create Person {
+	ActiveRecord {
+		table_name person
+		fields {
+			id {{id_ int key} {json ID string}}
+			name {{name_ string} {json NAME string}}	
+		}
+	}
+}
+
+
+
+test model_active_record {} -setup {setup} -body {
+	
+
+	set person [Person new]
+	$person prop name {Ricardo Bocchi} 
+	$person save
+
+	set results [Person find_all]
+
+	if {[llength $results] != 1} {
+		return -code error {expected 1}
+	}
+
+	set entity [lindex $results 0]
+	set result [Person find {name = ?} {{Ricardo Bocchi}}]
+	list [$result prop name] [$entity prop name]
+	
+
+} -result {{Ricardo Bocchi} {Ricardo Bocchi}}
+
+
+
+
+cleanupTests

@@ -74,7 +74,7 @@ datasource:
       host: localhost
       port: 3306
   test:
-    show_sql: false
+    show_sql: true
     pool_size: 1
     database:
       db: mydb_test

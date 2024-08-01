@@ -6,6 +6,7 @@ source $trailsdir/configs/configs.tcl
 source $trailsdir/http/router.tcl
 source $trailsdir/http/request.tcl
 source $trailsdir/http/response.tcl
+source $trailsdir/http/http_server.tcl
 source $trailsdir/tests/extra/dummy_controller.tcl
 
 namespace import ::tcltest::*
@@ -98,7 +99,7 @@ test dummy_controller_routes {} -body {
 	set dummy [DummyController new -scaffold true --allowed_methods {delete delete,get}]
 	set routes [$dummy get_routes]
 	llength $routes
-} -result {16}
+} -result {26}
 
 
 test dummy_controller_build_routes {} -body { 
@@ -109,5 +110,35 @@ test dummy_controller_build_routes {} -body {
 	set route [::trails::http::router::match /dummy get]
 	expr {$route != ""}
 } -result {1}
+
+test dummy_controller_with_render {} -body { 
+	::trails::http::router::build_scaffold_routes [[DummyController new] get_routes]	
+	set response [::trails::http::dispatch [Request new -path /dummy/withrender]]
+	list [$response prop status] [$response prop body] [$response prop content-type]
+} -result {200 withrender text/plain}
+
+test dummy_controller_with_list1 {} -body { 
+	::trails::http::router::build_scaffold_routes [[DummyController new] get_routes]	
+	set response [::trails::http::dispatch [Request new -path /dummy/list1]]
+	list [$response prop status] [$response prop body] [$response prop content-type]
+} -result {200 list1 text/plain}
+
+test dummy_controller_with_list2 {} -body { 
+	::trails::http::router::build_scaffold_routes [[DummyController new] get_routes]	
+	set response [::trails::http::dispatch [Request new -path /dummy/list2]]
+	list [$response prop status] [$response prop body] [$response prop content-type]
+} -result {200 list2 text/plain}
+
+test dummy_controller_with_json {} -body { 
+	::trails::http::router::build_scaffold_routes [[DummyController new] get_routes]	
+	set response [::trails::http::dispatch [Request new -path /dummy/withjson]]
+	list [$response prop status] [$response prop body] [$response prop content-type]
+} -result {200 {[{"x": 3}]} application/json}
+
+test dummy_controller_with_html {} -body { 
+	::trails::http::router::build_scaffold_routes [[DummyController new] get_routes]	
+	set response [::trails::http::dispatch [Request new -path /dummy/withhtml]]
+	list [$response prop status] [$response prop body] [$response prop content-type]
+} -result {200 {<html><body><h1>hello, trails!</h1></body></html>} text/html}
 
 cleanupTests

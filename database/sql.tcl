@@ -184,7 +184,7 @@ namespace eval ::trails::database::sql {
 				}
 			}
 
-			set where [load_where_params $where $where_params]
+			set where [load_where_params $where_body $where_params]
 		}
 
 		set query "SELECT"
@@ -234,11 +234,10 @@ namespace eval ::trails::database::sql {
 		 	set c [lindex $where $i]
 			if {$c == "?"} {
 				set c '[lindex $where_params $j]'
-				set j [incr $j]
+				incr j
 			}
-
 			lappend where_with_params $c
 		}	
-		return $where_with_params
+		return [join $where_with_params " "]
 	}
 }

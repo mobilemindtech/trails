@@ -79,11 +79,11 @@ namespace eval ::trails::misc::props {
 		method from_dict {d} {
 			my variable allowed_props
 			foreach k $allowed_props {
-				if {[dict exists d $k]} {
-					dict set d $k [my prop $k]
+				if {[dict exists $d $k]} {
+					my prop $k [dict get $d $k]
 				}
 			}
-			return $d
+			return [self]		
 		}
 	}
 

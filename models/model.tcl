@@ -1,94 +1,36 @@
 
-source ./core/misc/props.tcl
+
+set trailsdir [expr {[file exists "./trails"] == 1 ? "./trails" : "./"}]
+
+source $trailsdir/misc/props.tcl
 
 namespace import ::trails::misc::props::Props
 
 namespace eval ::trails::models {
+
+	variable Models
+	set Models {}
+
 	catch {
 		oo::class create Model {
 			superclass Props
-			variable db_columns json_fields
 		}
 	}
 
-	namespace export Model
+	namespace export Model ActiveRecord
+
 
 	oo::define Model {
 
 		constructor {} {
-			my variable allowed_props db_columns json_fields
+			my variable table_name allowed_props
 			set allowed_props [list id created_at updated_at]
-			set db_columns {}
-			set json_fields {}
 
-			#my defcol id -column id -type int -default 0 -auto timestamp -format fn
-			#my defjson id -field id -typein int -typeout int -default 0 -format fn
-		}
+			set fields [self get_fields]
 
-
-		method defcol {field args} {
-			my variable db_columns
-			set defs {}
-
-			foreach {k v} $args {
-				switch -regexp -- $k {
-					-column {
-						dict set defs column $v	
-					}
-					-type {
-						dict set defs type $v
-					}
-					-default {
-						dict set defs default $v
-					}
-					-auto {
-						dict set defs auto $v
-					}
-					-format {
-						dict set defs format $v
-					}
-					default {
-						return -code error "invalid defcol option: $k"
-					}
-				}
-			}
-
-			dict set db_columns $field $defs
-		}
-
-		method defjson {field args} {
-			my variable json_fields
-			set defs {}
-
-			foreach {k v} $args {
-				switch -regexp -- $k {
-					-field {
-						dict set defs field $v	
-					}
-					-typein {
-						dict set defs typein $v
-					}
-					-typeout {
-						dict set defs typeout $v
-					}
-					-default {
-						dict set defs default $v
-					}
-					-format {
-						dict set defs format $v
-					}					
-					default {
-						return -code error "invalid defjson option: $k"
-					}
-				}
-			}
-
-			dict set json_fields $field $defs
-		}
-
-
-		method get_columns {} {
-
+			foreach {k _} $fields {
+				lappend allowed_props $k
+			} 
 		}
 
 		method to_json {} {
@@ -99,4 +41,6 @@ namespace eval ::trails::models {
 
 		}
 	}
+
+
 }

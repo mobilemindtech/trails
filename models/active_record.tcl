@@ -26,6 +26,7 @@ namespace eval ::trails::models {
 	}
 
 	oo::define Model {
+
 		constructor {} {
 			my variable table_name allowed_props
 			set allowed_props {}
@@ -63,16 +64,18 @@ namespace eval ::trails::models {
 		variable Models
 		variable log
  		
- 		set actions [list get count exists with_transaction with_new_transaction find_all find find_by_key]
 
+ 		# add inherits Model
 		uplevel 1 {superclass ::trails::models::Model}
 
 		# static methods
+ 		set actions [list get count exists with_transaction with_new_transaction find_all find find_by_key]
 		foreach action $actions {
-			uplevel 1 [list self method $action {args} { ::trails::models::DispatchWihtClass [self] [self method] {*}$args }]
+			set body { ::trails::models::DispatchWihtClass [self] [self method] {*}$args }
+			uplevel 1 [list self method $action {args} $body]
 		}
 		
-
+		# get class
 		set cls [lindex [info level -1] 1]
 
 
@@ -89,7 +92,8 @@ namespace eval ::trails::models {
 				} 
 			}
 		}
-		
+			
+		# configure model info
 		dict set Models $cls [Domain new -table_name $table_name -fields $fields -class $cls]
 	}
 
@@ -99,18 +103,21 @@ namespace eval ::trails::models {
 		}
 	}
 
+	# dispatch action without args
 	proc Dispatch {cls action} {
 		variable Models
 		set domain [dict get $Models $cls]
 		$domain $action
 	}
 
+	# dispatch action with args
 	proc DispatchWihtArgs {cls action args} {
 		variable Models
 		set domain [dict get $Models $cls]
 		$domain $action {*}$args
 	}
 
+	# dispatch action without args and call method with class on first arg
 	proc DispatchWihtClass {cls action args} {
 		variable Models
 		set domain [dict get $Models $cls]
@@ -119,7 +126,6 @@ namespace eval ::trails::models {
 
 	oo::define Domain {
 		
-
 		constructor {args} {
 			my variable domain
 
@@ -149,17 +155,18 @@ namespace eval ::trails::models {
 			set kval ""
 			set kfield ""
 			set columns [my get_columns]
+			set is_entity [expr {[info object isa object $entity] && [info object class $entity Props]}]
 
 			foreach {fieldname defs} $columns {
 				set colname [lindex $defs 0]		
 				if {[lsearch -exact [string range $defs 1 end] key] >= 0} {
 					set kname $colname
 					set kfield $fieldname
-					if {[$entity present $fieldname]} {
+					if {$is_entity && [$entity present $fieldname]} {
 						set kval [$entity prop $fieldname]
 					}
 				}
-				if {[$entity present $fieldname]} {
+				if {$is_entity && [$entity present $fieldname]} {
 					dict set vals $colname [$entity prop $fieldname]
 				}
 			}
@@ -244,7 +251,7 @@ namespace eval ::trails::models {
 		}
 
 		method exists {cls args} {
-			set count [my count {*}$args]
+			set count [my count $cls {*}$args]
 			expr {$count > 0}
 		}
 
@@ -268,9 +275,7 @@ namespace eval ::trails::models {
 
 			set sql [::trails::database::sql::build $table_name $columns {*}$args -uplevel $upl]
 			set rows [::trails::database::db::raw_sql $sql] 
-			if {$rows == ""} {
-				return [list]
-			}
+			if {$rows == ""} { return [list] }
 			lmap row $rows { my row_to_domain $cls $row }  	
 		}
 
@@ -278,28 +283,21 @@ namespace eval ::trails::models {
 			set table_name [my get_table_name]
 			set columns [my get_columns]
 
-			lappend args {limit 1 offset 0}
-			set sql [::trails::database::sql::build $table_name $columns {*}$args]
+			set sql [::trails::database::sql::build $table_name $columns {*}$args -limit 1]
 			set row [::trails::database::db::raw_sql_first $sql] 
-			if {$row == ""} {
-				return {}
-			}
+			if {$row == ""} { return {} }
 			my row_to_domain $cls $row
 		}		
 
 		method find_by_key {cls args} {
 			set table_name [my get_table_name]
 			set data [my get_domain_info {}]
-
-			dict with data {		
-				
-				lappend args {limit 1 offset 0}
+			set columns [my get_columns]			
+			dict with data {				
 				set where [list $kfield = ?]
-				set sql [::trails::database::sql::build $table_name $columns $where $args]
+				set sql [::trails::database::sql::build $table_name $columns $where {*}$args -limit 1]
 				set row [::trails::database::db::raw_sql_first $sql] 
-				if {$row == ""} {
-					return {}
-				}
+				if {$row == ""} { return {} }
 				my row_to_domain $cls $row			
 			}
 

@@ -21,6 +21,18 @@ proc setup {} {
 	::trails::database::migrations::run
 }
 
+proc cleanup {} {
+	::trails::database::db::exec {DELETE FROM person}
+}
+
+proc assert {body} {
+
+	set bool [uplevel 1 [list expr $body]]
+
+	if {!$bool} {
+		return -code error {failure assert}
+	}
+} 
 
 oo::class create Person {
 	ActiveRecord {
@@ -32,29 +44,139 @@ oo::class create Person {
 	}
 }
 
-
-
-test model_active_record {} -setup {setup} -body {
-	
-
+test model_active_record_find_by_name {} -setup {setup} -cleanup {cleanup} -body {
 	set person [Person new]
 	$person prop name {Ricardo Bocchi} 
 	$person save
-
-	set results [Person find_all]
-
-	if {[llength $results] != 1} {
-		return -code error {expected 1}
-	}
-
-	set entity [lindex $results 0]
 	set result [Person find {name = ?} {{Ricardo Bocchi}}]
-	list [$result prop name] [$entity prop name]
+	$result prop name
+} -result {Ricardo Bocchi}
+
+test model_active_record_find_all {} -setup {setup} -cleanup {cleanup} -body {
+	foreach name {ricardo jonh joe monica} {
+		set person [Person new]
+		$person prop name $name 
+		$person save		
+	}
+	llength [Person find_all]
+} -result {4}
+
+test model_active_record_find_by_key {} -setup {setup} -cleanup {cleanup} -body {
+	set person [Person new]
+	$person prop name {Ricardo Bocchi} 
+	$person save
+	set result [Person find_by_key [$person prop id]]
+	$result prop name
+
+} -result {Ricardo Bocchi}
+
+test model_active_record_count {} -setup {setup} -cleanup {cleanup} -body {
 	
+	set person [Person new]
+	$person prop name {Ricardo} 
+	$person save
+	
+	set person [Person new]
+	$person prop name {Bocchi} 
+	$person save
+	
+	Person count 
+} -result {2}
 
-} -result {{Ricardo Bocchi} {Ricardo Bocchi}}
+test model_active_record_count_by_name {} -setup {setup} -cleanup {cleanup} -body {
+	
+	set person [Person new]
+	$person prop name {Ricardo} 
+	$person save
+	
+	set person [Person new]
+	$person prop name {Bocchi} 
+	$person save
+	
+	Person count {name = ?} {Ricardo}
+} -result {1}
 
+test model_active_record_exists_by_name {} -setup {setup} -cleanup {cleanup} -body {
+	
+	set person [Person new]
+	$person prop name {Ricardo} 
+	$person save
+	
+	set person [Person new]
+	$person prop name {Bocchi} 
+	$person save
+	
+	Person exists {name = ?} {Ricardo}
+} -result {1}
 
+test model_active_record_NOT_exists_by_name {} -setup {setup} -cleanup {cleanup} -body {
+	
+	set person [Person new]
+	$person prop name {Ricardo} 
+	$person save
+	
+	set person [Person new]
+	$person prop name {Bocchi} 
+	$person save
+	
+	Person exists {name = ?} {john}
+} -result {0}
 
+test model_active_record_update {} -setup {setup} -cleanup {cleanup} -body {
+	
+	set person [Person new]
+	$person prop name {Ricardo} 
+	$person save
+	
+	set result [Person find {name = ?} {Ricardo}]
+
+	assert { [$result prop name] == {Ricardo} }
+
+	$result prop name jonh
+	$result update
+
+	set result [Person find {name = ?} {jonh}]
+
+	assert { [$result prop name] == {jonh} }
+
+	Person count
+
+} -result {1}
+
+test model_active_record_delete {} -setup {setup} -cleanup {cleanup} -body {
+	
+	set person [Person new]
+	$person prop name {Ricardo} 
+	$person save
+	
+	set person [Person new]
+	$person prop name {john} 
+	$person save
+
+	assert { [Person count] == 2 }
+	
+	$person delete	
+
+	Person count
+
+} -result {1}
+
+test model_active_record_find_alias {} -setup {setup} -cleanup {cleanup} -body {
+	
+	set person [Person new]
+	$person prop name {Ricardo} 
+	$person save
+	
+	set person [Person new]
+	$person prop name {john} 
+	$person save
+
+	Person find -native {exists (select name_ from person where 1 = 1)}
+
+	$person delete	
+
+	Person count
+
+} -result {1}
 
 cleanupTests

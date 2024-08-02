@@ -32,6 +32,9 @@ namespace eval ::trails::database::sql {
 		set upl 1
 		set count false
 		set cols {}
+		set alias X0
+		set joins {}
+		set natives {}
 
 		set argc [llength $args]
 		set argv [list]
@@ -86,7 +89,22 @@ namespace eval ::trails::database::sql {
 					incr i
 					set replacements [lindex $args $i]
 					continue
-				}			
+				}	
+				-alias {
+					incr i
+					set alias [lindex $args $i]
+					continue
+				}		
+				-join {
+					incr i
+					lappend joins [lindex $args $i]
+					continue
+				}	
+				-native {
+					incr i
+					lappend natives [lindex $args $i] 
+					continue					
+				}	
 			} 	
 
 			lappend argv $arg
@@ -128,11 +146,37 @@ namespace eval ::trails::database::sql {
 
 					switch $typ {
 						{group by} {
-							set group_by $arg
+							set group_by {GROUP BY}
+							set vals {GROUP BY}
+							foreach field $arg {
+								if {[lsearch -exact [string toupper $field] $vals]} {
+									set group_by "$group_by [string toupper $field]" 
+								} else {
+									foreach {k v} $columns {
+										if {$k == $field} {
+											set group_by "$group_by [lindex $v 0]"
+											continue
+										}
+									}
+								}
+							}
 							continue
 						}
 						{order by} {
-							set order_by $arg
+							set order_by {ORDER BY}
+							set vals {ORDER BY ASC DESC}
+							foreach field $arg {
+								if {[lsearch -exact [string toupper $field] $vals]} {
+									set order_by "$order_by [string toupper $field]" 
+								} else {
+									foreach {k v} $columns {
+										if {$k == $field} {
+											set order_by "$order_by [lindex $v 0]"
+											continue
+										}
+									}
+								}
+							}
 							continue
 						}
 					}
@@ -159,17 +203,17 @@ namespace eval ::trails::database::sql {
 			set col_name [lindex $v 0]
 			
 			if {[string match "* $k *" $where_body]} {
-				set where_body [regsub " $k " $where_body " $col_name "]
+				set where_body [regsub " $k " $where_body " $alias.$col_name "]
 			} elseif {[string match "$k *" $where_body]} {
-				set where_body [regsub "$k " $where_body "$col_name "] 
+				set where_body [regsub "$k " $where_body "$alias.$col_name "] 
 			}
 
 			if {[string match "* $k *" $order_by]} {
-				set order_by [regsub " $k " $order_by " $col_name "]
+				set order_by [regsub " $k " $order_by " $alias.$col_name "]
 			} 
 
 			if {[string match "* $k *" $group_by]} {
-				set group_by [regsub " $k " $group_by " $col_name "]
+				set group_by [regsub " $k " $group_by " $alias.$col_name "]
 			} 
 		}	
 
@@ -194,12 +238,12 @@ namespace eval ::trails::database::sql {
 		} else {
 			if {[llength $cols] > 0} {
 				foreach col $cols {
-					set query "$query $col,"
+					set query "$query $alias.$col,"
 				}
 			} else {
 				foreach {_ v} $columns {
 					set col_name [lindex $v 0]
-					set query "$query $col_name,"
+					set query "$query $alias.$col_name,"
 				}
 			}
 			set query [string range $query 0 end-1]
@@ -210,7 +254,22 @@ namespace eval ::trails::database::sql {
 			set where "WHERE $where"
 		}
 
-		set query [string trim "$query FROM $table_name $where $group_by $order_by"]
+		if {[llength $natives ] > 0} {
+			if {[llength $where] > 0} {
+				set where "$where AND [join $natives " AND"]" 
+			} else {
+				set where "WHERE [join $natives " AND"]"
+			}
+		}
+
+		
+		if {[llength $joins] > 0} {
+			set joins [join $joins " "] 
+		}
+
+		set from "$table_name $alias"
+
+		set query [string trim "$query FROM $from $joins $where $group_by $order_by"]
 
 		if {$limit > 0} {
 			set query "$query LIMIT $limit"

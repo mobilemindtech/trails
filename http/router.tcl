@@ -36,8 +36,8 @@ namespace eval ::trails::http::router {
 									roles \
 									methods \
 									handler \
-									after \
-									before \
+									enter \
+									leave \
 									websocket \
 									path \
 									controller \
@@ -176,8 +176,8 @@ namespace eval ::trails::http::router {
 			roles [::trails::misc::util::get_def $cfg_route roles {}] \
 			methods [::trails::misc::util::get_def $cfg_route methods {}] \
 			handler [::trails::misc::util::get_def $cfg_route handler {}] \
-			after [::trails::misc::util::get_def $cfg_route after {}] \
-			before [::trails::misc::util::get_def $cfg_route before {}] \
+			enter [::trails::misc::util::get_def $cfg_route enter {}] \
+			leave [::trails::misc::util::get_def $cfg_route leave {}] \
 			websocket [::trails::misc::util::get_def $cfg_route websocket false] \
 			controller [::trails::misc::util::get_def $cfg_route controller {}] \
 			action [::trails::misc::util::get_def $cfg_route action {}] \
@@ -196,16 +196,16 @@ namespace eval ::trails::http::router {
 				lappend routes $route
 			}
 
-			set after [$route prop after]
-			set before [$route prop before]
+			set enter [$route prop enter]
+			set leave [$route prop leave]
 			set roles [$route prop roles]
 
 			foreach subroute_cfg [$route prop routes] {
 				#set path [$subroute prop path]
 
 				# merge with base route
-				set after_all [list {*}$after {*}[::trails::misc::util::get_def $subroute_cfg after {}]]
-				set before_all [list {*}$before {*}[::trails::misc::util::get_def $subroute_cfg before {}]]
+				set enter_all [list {*}$enter {*}[::trails::misc::util::get_def $subroute_cfg enter {}]]
+				set leave_all [list {*}$leave {*}[::trails::misc::util::get_def $subroute_cfg leave {}]]
 				set roles_all [list {*}$roles {*}[::trails::misc::util::get_def $subroute_cfg roles {}]] 
 
 				set subroute [Route new]
@@ -214,8 +214,8 @@ namespace eval ::trails::http::router {
 							roles $roles_all \
 							methods [::trails::misc::util::get_def $subroute_cfg methods {}] \
 							handler [::trails::misc::util::get_def $subroute_cfg handler {}] \
-							after $after_all \
-							before $before_all \
+							enter $enter_all \
+							leave $leave_all \
 							websocket [::trails::misc::util::get_def $subroute_cfg websocket false] \
 							path [dict get $subroute_cfg path]
 

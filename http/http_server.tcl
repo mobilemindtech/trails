@@ -17,9 +17,20 @@ namespace import ::trails::http::Request
 
 namespace eval ::trails::http {
   variable Controllers
+  variable Filters
   variable log
 	set log [logger::init http_server]
   set Controllers {}
+  set Filters {}
+
+  proc init {} {
+    variable Filters
+    set filters_objects [::trails::configs::get web filters objects]
+
+    foreach obj $filters_objects {
+      lappend Filters [$obj new]
+    }
+  }
 
   proc accept {socket addr port} {
     chan configure $socket -blocking 0 -buffering line
@@ -38,7 +49,7 @@ namespace eval ::trails::http {
     try {
       
       set request [::trails::http::http_parser::parse_request $socket]
-      set response [dispatch $request]
+      set response [filter_and_dispatch $request]
 
       if {[$response bool websocket]} {
 
@@ -53,7 +64,7 @@ namespace eval ::trails::http {
 
     } on error err {
 
-      ${log}::error $err
+      ${log}::error "$err: $::errorInfo"
 
       if {$err != "no data received -> close socket"} {
         ::trails::http::util::server_error $socket -body $err
@@ -85,6 +96,100 @@ namespace eval ::trails::http {
 
   proc http_connecton_close {socket} {
     catch {close $socket}
+  }
+
+  proc is_response {result} {
+    expr {[info object isa object $result] && [info object class $result Response]}
+  }
+
+  proc is_request {result} {
+    expr {[info object isa object $result] && [info object class $result Request]}
+  }
+ 
+  proc filter_and_dispatch {request} {
+    variable Filters
+    set filters_enter [::trails::configs::getdef web filters enter {}]
+    set filters_leave [::trails::configs::getdef web filters leave {}]
+    set filters_recover [::trails::configs::getdef web filters recover {}]
+
+
+    foreach filter $Filters {
+      set methods [info object methods $filter]
+      if {[lsearch -exact $methods enter] > -1} {
+        set result [$filter enter $request]
+        if {[is_response $result]} {
+          return $result
+        } elseif {[is_request $result]} {
+          set request $result
+        } else {
+          return -code error {wrong filter result}
+        }          
+      }
+    }
+
+    foreach enter $filters_enter {
+      set result [$enter $request]
+      if {[is_response $result]} {
+        return $result
+      } elseif {[is_request $result]} {
+        set request $result
+      } else {
+        return -code error {wrong filter result}
+      }
+    }  
+
+    try {
+      set response [dispatch $request]
+    } on error err {
+
+      foreach filter $Filters {
+        set methods [info object methods $filter]
+        if {[lsearch -exact $methods recover] > -1} {
+          set result [$filter recover $request $err]
+          if {[is_response $result]} {
+            set response $result
+          }                  
+        }
+      }      
+
+      foreach recover $filters_recover {
+        set result [$recover $request $err]
+
+        if {[is_response $result]} {
+          set response $result
+        }
+      }
+
+      if {![info exists response]} {
+        return -code error $err
+      }
+
+    }
+ 
+    foreach filter $Filters {
+      set methods [info object methods $filter]
+      if {[lsearch -exact $methods leave] > -1} {
+        set response [$filter leave $request $response]
+        if {![is_response $response]} {
+          return -code error {wrong filter result}
+        }      
+      }
+    }      
+
+    foreach leave $filters_leave {        
+      set response [$leave $request $response]
+      if {![is_response $response]} {
+        return -code error {wrong filter result}
+      }
+    }
+
+
+
+    if {![is_response $response]} {
+      return -code error {wrong response}
+    }
+
+    return $response
   }
 
   proc dispatch {request} {
@@ -131,10 +236,10 @@ namespace eval ::trails::http {
                   params [$route prop params] \
                   roles [$route prop roles]
 
-        set before_handlers [$route prop before]
-        set after_handlers [$route prop after]
+        set enter_handlers [$route prop enter]
+        set leave_handlers [$route prop leave]
 
-        foreach action $before_handlers {
+        foreach action $enter_handlers {
 
           set next [$action $request]
 
@@ -181,7 +286,7 @@ namespace eval ::trails::http {
           
         } 
 
-        foreach action $after_handlers {
+        foreach action $leave_handlers {
           set response [$action $request $response]  
           if {![info object class $response Response]} {
             return Response new -status 500 -body {wrong filter return type} -content-type $contentType

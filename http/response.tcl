@@ -20,7 +20,7 @@ namespace eval ::trails::http {
 		constructor {args} {
 			my variable allowed_props
 
-			set allowed_props [list body headers status content-type file websocket]
+			set allowed_props [list body headers status content-type file websocket template]
 			
 			next
 

@@ -45,7 +45,7 @@ namespace eval ::trails::controllers {
 
 		method define {args} {
 			my variable filters
-			set defs {methods "" action "" type before}
+			set defs {methods "" action "" type enter}
 			foreach {k v} $args {
 				switch -regexp -- $k {					
 					-filter {
@@ -71,7 +71,7 @@ namespace eval ::trails::controllers {
 
 		method get_routes {} {
 			my variable route_prefix route_path scaffold allowed_methods slog sdebug
-			set reserved_actions [list dispatch_action get_routes destroy render]
+			set reserved_actions [list dispatch_action get_routes destroy render enter leave recover]
 			set prefix $route_prefix
 			set actions [my Get_actions]
 			set routes {}
@@ -230,29 +230,55 @@ namespace eval ::trails::controllers {
 
 			if {$action_exec != ""} {
 
-				set filters [my Get_filters $request $action]
-				set filters_after [dict get $filters filters_after]
-				set filters_before [dict get $filters filters_before]
-				
-				foreach filter_action $filters_before {
-					set next [my $filter_action $request]
-					if {[info object class $next Request]} {
-						set request $next
-					} elseif {[info object class $next Response]} {
-						return $next
+
+				set methods [info object methods [self]]
+				set has_enter false
+				set has_leave false
+				set has_recover false
+
+				if {[lsearch -exact $methods enter] > -1} {
+					set has_enter true
+				}
+
+				if {[lsearch -exact $methods leave] > -1} {
+					set has_leave true
+				}
+
+				if {[lsearch -exact $methods recover] > -1} {
+					set has_recover true
+				}
+
+				if {$has_enter} {
+					set result [my enter $request]
+					if {[::trails::http::is_response $result]} {
+						return $result
+					} elseif {[::trails::http::is_request $result]} {
+						set request $result
 					} else {
-						return -code error {filter before should return req or resp object}
+						return -code error {wrong filter result}
 					}
 				}
 
-				set response [my $action_exec $request]
-
-				foreach filter_action $filters_after {
-					set response [my $filter_action $request $response]
-					if {![info object class $response Response]} {
-						return -code error {filter after should return resp object}
+				try {
+					set response [my $action_exec $request]					
+				} on error err {
+					if {$has_recover} {
+						set result [my recover $request $err]
+						if {[::trails::http::is_response $response]} {
+							return $result
+						}						
 					}
+
+					return -code error $err					
 				}
+
+				if {$has_leave} {
+					set response [my leave $request $response]
+					if {![::trails::http::is_response $response]} {
+						return -code error {wrong filter result}						
+					}
+				}				
+
 			}
 
 			if {$response == ""} {
@@ -260,46 +286,6 @@ namespace eval ::trails::controllers {
 			} 
 
 			return $response	
-		}
-
-		method Get_filters {request action} {
-			my variable filters
-
-			set filters_before {}
-			set filters_after {}
-			set method [$request prop method]
-
-			foreach item $filters {
-				set filter_action [dict get $item action]
-				set methods [lmap it [split [dict get $item methods] ,] {[string toupper $it]}]
-				set type [dict get $item type]
-				set filter [dict get $item filter]
-				set any_action [expr {$filter_action == ""}]
-				set any_method [expr {[llength $methods] == 0}]
-				set add false
-				
-				if {$any_action && $any_method} {
-					set add true
-				} elseif {$any_action} {
-					if {[lsearch -exact $methods $method] > -1} {
-						set add true
-					}
-				} elseif {$any_method} {
-					if {$action == $filter_action} {
-						set add true
-					}
-				} 
-
-				if {$add} {
-					if {$type == "before"} {
-						lappend filters_before $filter
-					} else {
-						lappend filters_after $filter
-					}	
-				}
-			}	
-
-			dict create filters_after $filters_after filters_before $filters_before		
 		}
 
 		method Index {request} {

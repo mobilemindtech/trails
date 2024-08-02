@@ -138,7 +138,7 @@ namespace eval ::trails::http::http_parser {
 	    #puts "requestBody = $requestBody"
 	    #puts "method=$requestMethod"
 	    if {[lsearch [list "GET" "OPTIONS" "HEAD"] $requestMethod] == -1} {
-	      set body [::trails::http::util::body_parse $requestBody $contentType]
+	      set body $requestBody	      
 	    } else {
 	      set body {}
 	    }

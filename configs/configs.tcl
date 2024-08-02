@@ -40,14 +40,18 @@ namespace eval ::trails::configs {
 		dict exists $cfg_data {*}$args
 	}
 
-	proc get_or {args} {
+	proc getdef {args} {
 		set def_val [lindex $args end]
 		set argv [lrange $args 0 end-1]	
 		if {[exists {*}$argv]} {
 			get {*}$argv
 		} else {
 			return $def_val
-		}
+		}		
+	}
+
+	proc get_or {args} {
+		getdef {*}$args
 	}
 
 	proc get_env {} {

@@ -38,7 +38,7 @@ namespace eval ::trails::json {
           [::tcl::unsupported::representation $value] -> type
       }
     }  
- 
+
     switch -regexp -- $type {
       dict {
 
@@ -111,6 +111,7 @@ namespace eval ::trails::json {
   }
 
   proc json2dict {text}  {
+    puts "auq"
     return [json::json2dict $text]
   }
 }

@@ -2,6 +2,8 @@
 
 package require logger
 
+set trailsdir [expr {[file exists "./trails"] == 1 ? "./trails" : "./"}]
+
 namespace eval ::trails {}
 
 foreach f [glob ./controllers/*.tcl] {
@@ -12,7 +14,12 @@ foreach f [glob ./controllers/*.tcl] {
 	}
 }
 
-set trailsdir [expr {[file exists "./trails"] == 1 ? "./trails" : "./"}]
+foreach f [glob $trailsdir/filters/*.tcl] {
+	set fname [lindex [split $f /] end]
+	puts "::> load filter $f"
+	source $f
+}
+
 
 source $trailsdir/database/migrations.tcl
 source $trailsdir/configs/configs.tcl
@@ -60,6 +67,7 @@ namespace eval ::trails::app {
 			set socket [socket -server httpworker::accept $port]  
 		} else {
 			::trails::database::pool::init $pool_size
+			::trails::http::init
 			set socket [socket -server ::trails::http::accept $port]  
 		}
 

@@ -1,5 +1,7 @@
 # TCL on Rails
 
+In progress
+
 ### TODO
 - jobs 
 	- cron?
@@ -9,8 +11,8 @@
 	- scaffold implementation
 	- template implementation
 - http server
-	- render json
-	- render template
+	- render json - ok
+	- render template - ok
 	- websocket
 	- workers
 - models

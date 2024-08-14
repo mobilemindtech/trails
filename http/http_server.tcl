@@ -114,7 +114,7 @@ namespace eval ::trails::http {
 
 
     foreach filter $Filters {
-      set methods [info object methods $filter]
+      set methods [info object methods $filter -all]
       if {[lsearch -exact $methods enter] > -1} {
         set result [$filter enter $request]
         if {[is_response $result]} {
@@ -143,7 +143,7 @@ namespace eval ::trails::http {
     } on error err {
 
       foreach filter $Filters {
-        set methods [info object methods $filter]
+        set methods [info object methods $filter -all]
         if {[lsearch -exact $methods recover] > -1} {
           set result [$filter recover $request $err]
           if {[is_response $result]} {
@@ -167,7 +167,7 @@ namespace eval ::trails::http {
     }
  
     foreach filter $Filters {
-      set methods [info object methods $filter]
+      set methods [info object methods $filter -all]
       if {[lsearch -exact $methods leave] > -1} {
         set response [$filter leave $request $response]
         if {![is_response $response]} {
@@ -208,11 +208,11 @@ namespace eval ::trails::http {
 
     ${log}::debug "HTTP REQUEST: $method $path"
 
-    if {[string match "/public/assets/*" $path]} {
+    if {[string match "/public/*" $path]} {
       
-      set path [::trails::configs::get assets]
+      set path [::trails::configs::get public]
       set map {} 
-      lappend map "/public/assets" $path
+      lappend map "/public" $path
       return Response new -file [string map $map $path]
 
     } else {

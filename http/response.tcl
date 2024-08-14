@@ -20,37 +20,72 @@ namespace eval ::trails::http {
 		constructor {args} {
 			my variable allowed_props
 
-			set allowed_props [list body headers status content-type file websocket template]
+			set allowed_props [list \
+								body \
+								headers \
+								status \
+								content-type \
+								file \
+								websocket \
+								tpl-name \
+								tpl-text \
+								tpl-json \
+								ctx]
 			
 			next
 
 			foreach {k v} $args {
-				switch -regexp -- $k {
-					-status|status  {
+				switch $k {
+					-status -
+					status  {
 						my prop status $v
 					}
-					-body|body {
+					-body -
+					body {
 						my prop body $v
 					}
-					-content-type|content-type {
+					-content-type -
+					content-type {
 						my prop content-type $v
 					}				
-					-headers|headers {
+					-headers -
+					headers {
 						my prop headers $v
 					}
-					-json|json {
+					-json -
+					json {
 						my props body $v content-type {application/json} 
 					}				
-					-text|text {
+					-text -
+					text {
 						my props body $v content-type {text/plain} 
 					}				
-					-html|html {
+					-html -
+					html {
 						my props body $v content-type {text/html} 
 					}	
-					-file|file {
+					-file -
+					file {
 						my prop file $v
 					}
-					-websocket|websocket {
+					-ctx -
+					ctx {
+						my prop ctx $v
+					}
+					-tpl-name -
+					tpl-name {
+						my props tpl-name $v content-type {text/html}
+					}
+					-tpl-text -
+					tpl-text {
+						my props tpl-text $v content-type {text/html}
+					}		
+					-tpl-json -
+					tpl-json {
+						my props tpl-json $v content-type {application/json}
+					}								
+					-websocket -
+					websocket {
 						my prop websocket $v
 					}			
 				}

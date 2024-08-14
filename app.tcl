@@ -1,6 +1,10 @@
 #!/bin/tclsh
 
+source ./.tcl/deps.tcl
+
 package require logger
+package require SimpleTemplater
+
 
 set trailsdir [expr {[file exists "./trails"] == 1 ? "./trails" : "./"}]
 

@@ -96,25 +96,21 @@ namespace eval ::trails::app {
 
 	proc test {argc argv} {
 	    
-	    set params ""
+	    set params $argv
 
-	    if {$argc > 1} {
+	    if {$argc > 0 && [lindex $argv 0] == "--help"} {
 
-	        if {[lindex $argv 1] == "--help"} {
-	            puts "::> Test usage:"
-	            puts "::> configure -file patternList"
-	            puts "::> configure -notfile patternList"
-	            puts "::> configure -match patternList"
-	            puts "::> configure -skip patternList"
-	            puts "::> matchFiles patternList = shortcut for configure -file"
-	            puts "::> skipFiles patternList = shortcut for configure -notfile"
-	            puts "::> match patternList = shortcut for configure -match"
-	            puts "::> skip patternList = shortcut for configure -skip"
-	            puts "::> See more at https://wiki.tcl-lang.org/page/tcltest"
-	            return
-	        }
-
-	        set params [lrange $argv 1 end]
+            puts "::> Test usage:"
+            puts "::> configure -file patternList"
+            puts "::> configure -notfile patternList"
+            puts "::> configure -match patternList"
+            puts "::> configure -skip patternList"
+            puts "::> matchFiles patternList = shortcut for configure -file"
+            puts "::> skipFiles patternList = shortcut for configure -notfile"
+            puts "::> match patternList = shortcut for configure -match"
+            puts "::> skip patternList = shortcut for configure -skip"
+            puts "::> See more at https://wiki.tcl-lang.org/page/tcltest"
+            return
 	    }
 
 	    
@@ -137,6 +133,8 @@ proc trails_run_app {} {
 	if {$argc > 0} {
 		set opt [lindex $argv 0]
 	}
+
+	puts "trails app args: $argv"
 
 
 	switch $opt {

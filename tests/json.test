@@ -2,11 +2,11 @@ package require tcltest
 package require TclOO
 
 source $::env(TRAILS_HOME)/json/json.tcl
+source $::env(TRAILS_HOME)/models/active_record.tcl
 
 namespace import ::tcltest::*
-
 namespace import ::trails::json::* 
-
+namespace import ::trails::models::ActiveRecord
 
 test json_tcl2json {} -body {
 	
@@ -153,5 +153,51 @@ test json_tcl2json {} -body {
         "name" : "fred"
     }]
 }]}
+
+oo::class create Person {
+	ActiveRecord {
+		table_name person
+		fields {
+			id {{id_ int key} {json ID int}}
+			name {{name_ string} {json NAME string}}	
+		}
+	}
+}
+
+test model2json_custom {} -body {
+	set person [Person new]
+	$person props name {Ricardo Bocchi} id 1 
+	set json_obj [$person to_json]
+	dict with json_obj {
+		tcl2json $data -tpl $tpl
+	}
+} -result {{
+    "ID"   : 1,
+    "NAME" : "Ricardo Bocchi"
+}}
+
+test model2json_auto {} -body {
+	set person [Person new]
+	$person props name {Ricardo Bocchi} id 1 
+	model_to_json $person
+} -result {{
+    "ID"   : 1,
+    "NAME" : "Ricardo Bocchi"
+}}
+
+test model2json_list {} -body {
+	set person1 [Person new]
+	$person1 props name {Ricardo Bocchi} id 1 
+	set person2 [Person new]
+	$person2 props name {Jonas De Mole} id 2 
+	model_list_to_json [list $person1 $person2]
+} -result {[{
+    "ID"   : 1,
+    "NAME" : "Ricardo Bocchi"
+},{
+    "ID"   : 2,
+    "NAME" : "Jonas De Mole"
+}]}
+
 
 cleanupTests

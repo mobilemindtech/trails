@@ -2,7 +2,6 @@
 
 source $::env(TRAILS_HOME)/database/db.tcl
 source $::env(TRAILS_HOME)/database/sql.tcl
-source $::env(TRAILS_HOME)/models/model.tcl
 source $::env(TRAILS_HOME)/misc/props.tcl
 
 namespace import ::trails::misc::props::Props
@@ -55,6 +54,18 @@ namespace eval ::trails::models {
 
 		method delete {} {
 			::trails::models::DispatchWihtArgs [info object class [self]] delete [self]
+		}
+		
+		method to_json {} {			
+			::trails::models::DispatchWihtArgs [info object class [self]] to_json [self]
+		}
+
+		method to_json_data {} {			
+			::trails::models::DispatchWihtArgs [info object class [self]] to_json_data [self]
+		}
+
+		method to_json_tpl {} {			
+			::trails::models::DispatchWihtArgs [info object class [self]] to_json_tpl [self]
 		}
 	}
 
@@ -169,7 +180,13 @@ namespace eval ::trails::models {
 				}
 			}
 
-			dict create table $table vals $vals key [list $kname $kval]	kname $kname kval $kval kfield $kfield
+			dict create \
+				table $table \
+				vals $vals \
+				key [list $kname $kval]	\
+				kname $kname \
+				kval $kval \
+				kfield $kfield
 		}
 
 		method get_fields {} {
@@ -182,6 +199,20 @@ namespace eval ::trails::models {
 			set columns {}
 			foreach {fieldname defs} [dict get $domain fields] { 
 				set coldefs [lindex $defs 0]
+				dict set columns $fieldname $coldefs 		
+			}	
+
+			return $columns
+		}
+
+		method get_columns_json {} {
+			my variable domain
+			set columns {}
+			foreach {fieldname defs} [dict get $domain fields] {
+
+				if {[llength $defs] <= 1} { continue } 
+
+				set coldefs [lindex $defs 1]
 				dict set columns $fieldname $coldefs 		
 			}	
 
@@ -298,7 +329,34 @@ namespace eval ::trails::models {
 				if {$row == ""} { return {} }
 				my row_to_domain $cls $row			
 			}
+		}
 
+		method to_json_data {args} {
+			dict get [my to_json {*}$args] data
+		}
+
+		method to_json_tpl {args} {
+			dict get [my to_json {*}$args] tpl
+		}
+
+		method to_json args {
+			set columns [my get_columns_json]
+			set entity [lindex $args 0]
+			set data {}
+			set tpl {}
+
+	
+			dict for {k defs} $columns {
+
+				set name [lindex $defs 1]
+				set typ [lindex $defs 2]
+
+				set val [$entity prop $k]
+				dict set data $name $val
+				dict set tpl $name $typ
+			}
+
+			dict create data $data tpl $tpl
 		}
 	}	
 }

@@ -7,7 +7,45 @@ source $::env(TRAILS_HOME)/misc/util.tcl
 
 namespace eval ::trails::json {
 
-  namespace export tcl2json json2dict
+  namespace export \
+    tcl2json \
+    json2dict \
+    model_to_json \
+    model_list_to_json \
+    dict_to_json \
+    list_to_json \
+    json_to_dict
+
+  proc model_to_json {model args} {
+    set json [$model to_json]
+    dict with json {
+      tcl2json $data -tpl $tpl
+    }    
+  }
+
+  proc model_list_to_json {models args} {
+    set items [lmap it $models {$it to_json_data}]
+
+    if {[llength $models] == 0} {
+      return {[]}
+    }
+
+    set tpl [[lindex $models 0] to_json_tpl]
+
+    tcl2json $items -tpl $tpl -list
+  }
+
+  proc dict_to_json {value args} {
+    tcl2json $value {*}$args
+  }
+
+  proc list_to_json {value args} {
+    tcl2json $value {*}$args -list
+  }
+
+  proc json_to_dict {} {
+    json2dict $text
+  }
 
   # tepl is a dict
   proc tcl2json {value args} {
@@ -109,7 +147,6 @@ namespace eval ::trails::json {
   }
 
   proc json2dict {text}  {
-    puts "auq"
     return [json::json2dict $text]
   }
 }

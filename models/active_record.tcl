@@ -1,11 +1,9 @@
 
 
-set trailsdir [expr {[file exists "./trails"] == 1 ? "./trails" : "./"}]
-
-source $trailsdir/database/db.tcl
-source $trailsdir/database/sql.tcl
-source $trailsdir/models/model.tcl
-source $trailsdir/misc/props.tcl
+source $::env(TRAILS_HOME)/database/db.tcl
+source $::env(TRAILS_HOME)/database/sql.tcl
+source $::env(TRAILS_HOME)/models/model.tcl
+source $::env(TRAILS_HOME)/misc/props.tcl
 
 namespace import ::trails::misc::props::Props
 

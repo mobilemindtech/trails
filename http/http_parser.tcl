@@ -2,9 +2,7 @@
 package require logger
 package require coroutine
 
-set trailsdir [expr {[file exists "./trails"] == 1 ? "./trails" : "./"}]
-
-source $trailsdir/http/util.tcl
+source $::env(TRAILS_HOME)/http/util.tcl
 
 namespace eval ::trails::http::http_parser {
 	variable log

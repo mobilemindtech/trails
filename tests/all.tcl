@@ -1,4 +1,5 @@
 
+set ::env(TRAILS_HOME) [expr {[file exists "./.tcl/trails"] == 1 ? "./.tcl/trails" : "./"}]
 
 package require tcltest
 namespace import ::tcltest::*

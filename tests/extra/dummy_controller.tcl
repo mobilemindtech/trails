@@ -1,9 +1,8 @@
 package require TclOO
 
-set trailsdir [expr {[file exists "./trails"] == 1 ? "./trails" : "./"}]
 
-source $trailsdir/tests/extra/dummy_service.tcl
-source $trailsdir/controllers/controller.tcl
+source $::env(TRAILS_HOME)/tests/extra/dummy_service.tcl
+source $::env(TRAILS_HOME)/controllers/controller.tcl
 
 namespace import ::services::DummyService
 namespace import ::trails::controllers::Controller

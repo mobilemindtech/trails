@@ -3,10 +3,8 @@
 package require logger 0.3
 package require TclOO
 
-set trailsdir [expr {[file exists "./trails"] == 1 ? "./trails" : "./"}]
-
-source $trailsdir/misc/util.tcl
-source $trailsdir/misc/props.tcl
+source $::env(TRAILS_HOME)/misc/util.tcl
+source $::env(TRAILS_HOME)/misc/props.tcl
 
 
 namespace import ::trails::misc::props::Props
@@ -376,12 +374,12 @@ namespace eval ::trails::http::router {
 			}
 
 			# or else get first route
-			if {![info object class $route_found Route]} {
+			if {![info object isa object $route_found] || ![info object class $route_found Route]} {
 				set route_found [lindex $routes_match 0]
 			}
 		}	
 
-		if {[info object class $route_found Route]} {
+		if {[info object isa object $route_found] && [info object class $route_found Route]} {
 			set variables [$route_found prop variables]
 			set n [llength $variables]
 			set vars {}

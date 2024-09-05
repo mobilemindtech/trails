@@ -1,18 +1,16 @@
 
 package require tcltest
 
-set trailsdir [expr {[file exists "./trails"] == 1 ? "./trails" : "./"}]
-
-source $trailsdir/configs/configs.tcl
-source $trailsdir/database/db.tcl
-source $trailsdir/database/migrations.tcl
-source $trailsdir/services/service.tcl
-source $trailsdir/tests/extra/dummy_service.tcl
+source $::env(TRAILS_HOME)/configs/configs.tcl
+source $::env(TRAILS_HOME)/database/db.tcl
+source $::env(TRAILS_HOME)/database/migrations.tcl
+source $::env(TRAILS_HOME)/services/service.tcl
+source $::env(TRAILS_HOME)/tests/extra/dummy_service.tcl
 
 namespace import ::tcltest::*
 
 set ::env(ENV) test
-::trails::configs::init_with_file $trailsdir/tests/extra/application.yaml
+::trails::configs::init_with_file $::env(TRAILS_HOME)/tests/extra/application.yaml
 
 proc setup {} {
 	::trails::database::db::exec {DROP TABLE IF EXISTS person}

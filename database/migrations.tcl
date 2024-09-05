@@ -1,10 +1,8 @@
 package require logger
 
-set trailsdir [expr {[file exists "./trails"] == 1 ? "./trails" : "./"}]
-
-source $trailsdir/database/db.tcl
-source $trailsdir/misc/util.tcl
-source $trailsdir/configs/configs.tcl
+source $::env(TRAILS_HOME)/database/db.tcl
+source $::env(TRAILS_HOME)/misc/util.tcl
+source $::env(TRAILS_HOME)/configs/configs.tcl
 
 namespace eval ::trails::database::migrations {
 	set log [logger::init migrations]

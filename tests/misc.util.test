@@ -1,8 +1,6 @@
 package require tcltest
 
-set trailsdir [expr {[file exists "./trails"] == 1 ? "./trails" : "./"}]
-
-source $trailsdir/misc/util.tcl
+source $::env(TRAILS_HOME)/misc/util.tcl
 
 namespace import ::tcltest::*
 

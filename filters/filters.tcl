@@ -1,8 +1,6 @@
 
 
-set trailsdir [expr {[file exists "./trails"] == 1 ? "./trails" : "./"}]
-
-source $trailsdir/json/json.tcl
+source $::env(TRAILS_HOME)/json/json.tcl
 
 
 namespace eval ::filters {

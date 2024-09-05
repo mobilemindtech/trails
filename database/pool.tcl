@@ -1,8 +1,7 @@
 
-set trailsdir [expr {[file exists "./trails"] == 1 ? "./trails" : "./"}]
 
-source $trailsdir/database/result_set.tcl
-source $trailsdir/configs/configs.tcl
+source $::env(TRAILS_HOME)/database/result_set.tcl
+source $::env(TRAILS_HOME)/configs/configs.tcl
 
 namespace import ::trails::configs::*
 namespace import ::trails::database::ResultSet

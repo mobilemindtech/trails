@@ -1,11 +1,9 @@
 package require tcltest
 package require TclOO
 
-set trailsdir [expr {[file exists "./trails"] == 1 ? "./trails" : "./"}]
-
-source $trailsdir/configs/configs.tcl
-source $trailsdir/models/active_record.tcl
-source $trailsdir/database/migrations.tcl
+source $::env(TRAILS_HOME)/configs/configs.tcl
+source $::env(TRAILS_HOME)/models/active_record.tcl
+source $::env(TRAILS_HOME)/database/migrations.tcl
 
 namespace import ::tcltest::*
 
@@ -13,7 +11,7 @@ namespace import ::trails::models::ActiveRecord
 
 
 set ::env(ENV) test
-::trails::configs::init_with_file $trailsdir/tests/extra/application.yaml
+::trails::configs::init_with_file $::env(TRAILS_HOME)/tests/extra/application.yaml
 
 proc setup {} {
 	::trails::database::db::exec {DROP TABLE IF EXISTS person}

@@ -2,10 +2,8 @@
 
 package require logger
 
-set trailsdir [expr {[file exists "./trails"] == 1 ? "./trails" : "./"}]
-
-source $trailsdir/http/request.tcl
-source $trailsdir/http/response.tcl
+source $::env(TRAILS_HOME)/http/request.tcl
+source $::env(TRAILS_HOME)/http/response.tcl
 
 namespace import ::trails::http::Response
 namespace import ::trails::http::Request

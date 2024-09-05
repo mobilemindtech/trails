@@ -65,7 +65,7 @@ web:
 
 datasource:
   dev:
-    show_sql: true
+    show_sql: false
     pool_size: 1
     database:
       db: mydb_dev
@@ -74,7 +74,7 @@ datasource:
       host: localhost
       port: 3306
   test:
-    show_sql: true
+    show_sql: false
     pool_size: 1
     database:
       db: mydb_test

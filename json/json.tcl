@@ -2,9 +2,7 @@
 package require json
 package require json::write
 
-set trailsdir [expr {[file exists "./trails"] == 1 ? "./trails" : "./"}]
-
-source $trailsdir/misc/util.tcl
+source $::env(TRAILS_HOME)/misc/util.tcl
 
 
 namespace eval ::trails::json {

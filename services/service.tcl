@@ -2,10 +2,8 @@
 
 package require logger
 
-set trailsdir [expr {[file exists "./trails"] == 1 ? "./trails" : "./"}]
-
-source $trailsdir/database/sql.tcl
-source $trailsdir/database/db.tcl
+source $::env(TRAILS_HOME)/database/sql.tcl
+source $::env(TRAILS_HOME)/database/db.tcl
 
 namespace eval ::trails::services {
 

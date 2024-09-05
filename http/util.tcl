@@ -1,8 +1,6 @@
 
-set trailsdir [expr {[file exists "./trails"] == 1 ? "./trails" : "./"}]
-
-source $trailsdir/http/codes.tcl
-source $trailsdir/http/mimes.tcl
+source $::env(TRAILS_HOME)/http/codes.tcl
+source $::env(TRAILS_HOME)/http/mimes.tcl
 
 namespace eval ::trails::http::util {
 

@@ -2,11 +2,8 @@ package require mysqltcl
 package require logger
 package require TclOO
 
-set trailsdir [expr {[file exists "./trails"] == 1 ? "./trails" : "./"}] 
-
-
-source $trailsdir/database/result_set.tcl
-source $trailsdir/database/pool.tcl
+source $::env(TRAILS_HOME)/database/result_set.tcl
+source $::env(TRAILS_HOME)/database/pool.tcl
 
 namespace import ::trails::database::pool::*
 

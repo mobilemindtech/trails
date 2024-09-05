@@ -1,8 +1,6 @@
 #!/bin/tclsh
 
-set trailsdir [expr {[file exists "./trails"] == 1 ? "./trails" : "./"}]
-
-source $trailsdir/misc/props.tcl
+source $::env(TRAILS_HOME)/misc/props.tcl
 
 namespace import ::trails::misc::props::Props
 

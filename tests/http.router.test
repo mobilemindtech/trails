@@ -1,14 +1,12 @@
 package require tcltest
 
-set trailsdir [expr {[file exists "./trails"] == 1 ? "./trails" : "./"}]
-
-source $trailsdir/configs/configs.tcl
-source $trailsdir/http/router.tcl
+source $::env(TRAILS_HOME)/configs/configs.tcl
+source $::env(TRAILS_HOME)/http/router.tcl
 
 namespace import ::tcltest::*
 
 set ::env(ENV) test
-::trails::configs::init_with_file $trailsdir/tests/extra/application.yaml
+::trails::configs::init_with_file $::env(TRAILS_HOME)/tests/extra/application.yaml
 
 proc setup {} {
 }

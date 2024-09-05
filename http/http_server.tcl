@@ -2,14 +2,12 @@
 package require logger
 package require coroutine
 
-set trailsdir [expr {[file exists "./trails"] == 1 ? "./trails" : "./"}]
-
-source $trailsdir/http/request.tcl
-source $trailsdir/http/response.tcl
-source $trailsdir/http/util.tcl
-source $trailsdir/http/router.tcl
-source $trailsdir/http/http_parser.tcl
-source $trailsdir/configs/configs.tcl
+source $::env(TRAILS_HOME)/http/request.tcl
+source $::env(TRAILS_HOME)/http/response.tcl
+source $::env(TRAILS_HOME)/http/util.tcl
+source $::env(TRAILS_HOME)/http/router.tcl
+source $::env(TRAILS_HOME)/http/http_parser.tcl
+source $::env(TRAILS_HOME)/configs/configs.tcl
 
 namespace import ::trails::http::Response
 namespace import ::trails::http::Request

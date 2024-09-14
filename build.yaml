@@ -1,0 +1,23 @@
+
+
+app:
+  name: trails
+  description: TCL on Rails 
+  entrypoint: 
+  testdir: 
+
+dependencies:
+  - https://github.com/mobilemindtech/tcl-simple-templater.git  
+
+requirements:
+  packages:
+  cmds:
+
+build:
+  cmds:
+
+commands:
+  trails.migrate: ./app.tcl migrate
+  trails.dev.forever: ./app.tcl dev
+  trails.prod.forever: ./app.tcl prod
+  trails.test: ./app.tcl test

@@ -15,29 +15,23 @@ namespace eval ::controllers  {
 	}
 
 	oo::define DummyController {
-		constructor {args} {	
-			next	
-			my variable service scaffold route_prefix allowed_methods filters
-			set service [DummyService new]	
+		constructor {args} {
+			next {*}$args
+
+			my variable scaffold
 			set scaffold true
-			set route_prefix /api/v2
 
 			foreach {k v} $args {
 				switch -regexp -- $k {
 					-scaffold|scaffold {
 						set scaffold $v
 					}
-					-route_prefix|route_prefix {
-						set route_prefix $v
-					}
-					-controller|controller {
-						set controller $v
-					}
-					-allowed_methods|allowed_methods {
-						set allowed_methods $v
-					}
-				}				
+				}
 			}
+		}
+
+		method MyFilterLeave {req resp} {
+			my render -text "filter"
 		}
 		
 		method index {request} {
@@ -69,8 +63,36 @@ namespace eval ::controllers  {
 		}		
 	}
 
+	catch {
+		oo::class create IndexController { 
+			superclass Controller
+		}
+	}
 
-	namespace export DummyController
+	oo::define IndexController {
+		constructor {args} {
+			next {*}$args
+
+			my variable scaffold
+			set scaffold true
+
+			foreach {k v} $args {
+				switch -regexp -- $k {
+					-scaffold|scaffold {
+						set scaffold $v
+					}
+				}
+			}
+		}
+
+		method index {req} {
+			my render -text {default index}
+		}
+	}
+
+
+	
+	namespace export DummyController IndexController
 }
 
 

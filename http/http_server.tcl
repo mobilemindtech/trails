@@ -35,6 +35,12 @@ namespace eval ::trails::http {
     chan event $socket readable [list ::trails::http::handle $socket $addr $port]  
   }
 
+  # add controller instance on cache
+  proc add_controller {ctrl} {
+    variable Controllers
+    dict set Controllers [info object class $ctrl] $ctrl
+  }
+
   proc handle {socket addr port} {
     variable log
 

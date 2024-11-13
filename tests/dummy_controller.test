@@ -9,6 +9,7 @@ source $::env(TRAILS_HOME)/tests/extra/dummy_controller.tcl
 
 namespace import ::tcltest::*
 namespace import ::controllers::DummyController
+namespace import ::controllers::IndexController
 namespace import ::trails::http::Request
 namespace import ::trails::http::router::Route
 
@@ -97,8 +98,7 @@ test dummy_controller_routes {} -body {
 	set dummy [DummyController new -scaffold true --allowed_methods {delete delete,get}]
 	set routes [$dummy get_routes]
 	llength $routes
-} -result {26}
-
+} -result {24}
 
 test dummy_controller_build_routes {} -body { 
 	set dummy [DummyController new -scaffold true --route_prefix {}]
@@ -111,6 +111,7 @@ test dummy_controller_build_routes {} -body {
 
 test dummy_controller_with_render {} -body { 
 	::trails::http::router::build_scaffold_routes [[DummyController new] get_routes]	
+	::trails::http::router::print
 	set response [::trails::http::dispatch [Request new -path /dummy/withrender]]
 	list [$response prop status] [$response prop body] [$response prop content-type]
 } -result {200 withrender text/plain}
@@ -138,5 +139,28 @@ test dummy_controller_with_html {} -body {
 	set response [::trails::http::dispatch [Request new -path /dummy/withhtml]]
 	list [$response prop status] [$response prop body] [$response prop content-type]
 } -result {200 {<html><body><h1>hello, trails!</h1></body></html>} text/html}
+
+test dummy_controller_with_html {} -body { 
+	::trails::http::router::build_scaffold_routes [[DummyController new] get_routes]	
+	set response [::trails::http::dispatch [Request new -path /dummy/withhtml]]
+	list [$response prop status] [$response prop body] [$response prop content-type]
+} -result {200 {<html><body><h1>hello, trails!</h1></body></html>} text/html}
+
+test dummy_controller_filter_before {} -body { 
+	set dummy [DummyController new -filters {index {MyFilterLeave leave *}}]
+	::trails::http::add_controller $dummy
+	::trails::http::router::build_scaffold_routes [$dummy get_routes]
+	set response [::trails::http::dispatch [Request new -path /dummy]]
+	$response prop body
+} -result {filter}
+
+test index_controller {} -body { 
+	set index [IndexController new]
+	::trails::http::router::build_scaffold_routes [$index get_routes]
+	::trails::http::router::print
+	set response [::trails::http::dispatch [Request new -path /]]
+	$response prop body
+} -result {default index}
+
 
 cleanupTests

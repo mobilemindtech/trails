@@ -4,7 +4,6 @@ package provide trails 0.1
 
 set ::env(TRAILS_HOME) [expr {[file exists "./.tcl/trails"] == 1 ? "./.tcl/trails" : "./"}]
 
-#source ./.tcl/deps.tcl
 
 package require logger
 package require SimpleTemplater
@@ -14,6 +13,7 @@ namespace import ::trails::configs::get_env
 
 namespace eval ::trails {}
 
+# load controllres
 foreach f [glob ./controllers/*.tcl] {
 	set fname [lindex [split $f /] end]
 	if {$fname != "controller.tcl"} {
@@ -24,6 +24,7 @@ foreach f [glob ./controllers/*.tcl] {
 	}
 }
 
+# load filters
 foreach f [glob $::env(TRAILS_HOME)/filters/*.tcl] {
 	set fname [lindex [split $f /] end]
 	if {[get_env] == "dev"} {
@@ -126,16 +127,13 @@ namespace eval ::trails::app {
 proc trails_run_app {} {
 	global argc
 	global argv
+	set opt ""
 
 	::trails::configs::init
-	set opt ""
 
 	if {$argc > 0} {
 		set opt [lindex $argv 0]
 	}
-
-	puts "trails app args: $argv"
-
 
 	switch $opt {
 		migrate {

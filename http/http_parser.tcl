@@ -15,29 +15,32 @@ namespace eval ::trails::http::http_parser {
 	    set requestMethod ""
 	    set requestURI ""
 	    set requestProtocol ""
-	    set requestHeader [dict create connection "close" accept "text/plain" accept-encoding "" content-type "text/plain"]
+	    set requestHeader [dict create \
+	    					connection "close" \
+	    					accept "text/plain" \
+	    					accept-encoding "" \
+	    					content-type "text/plain"]
 	    set requestBody {}
 	    set requestQuery {}
 	    #set RequestAcceptGZip 0; # Indicates that the request accepts a gzipped response
-	    set state connecting
+	    set state connecting # connecting header body
 
-	    # while {[gets $socket line]>=0}
 
-	    while {1} {
+	    while {true} {
 
 	      set readCount [::coroutine::util::gets_safety $socket 4096 line]
 
 	      # Decode the HTTP request line
 	      if {$state == "connecting"} {
 	        if {![regexp {^(\w+)\s+(/.*)\s+(HTTP/[\d\.]+)} $line {} requestMethod requestURI requestProtocol]} {
-	          break }
+	          break 
+	      	}
 
 	        #set path "/[string trim [lindex $line 1] /]"
 	        set requestQuery [::trails::http::router::get_uri_query $requestURI]
 	        
 	        # remove query from URI
-	        set parts [split $requestURI ?]
-	        set requestURI [lindex $parts 0]
+	        set requestURI [lindex [split $requestURI ?] 0]
 
 	        set state header
 
@@ -111,8 +114,9 @@ namespace eval ::trails::http::http_parser {
 	        # Read the number of bytes defined by the content-length header
 	        set contentLength [dict get $requestHeader content-length]
 	        while {![eof $socket]} {
-	          if {[string bytelength $requestBody]>=$contentLength} {
-	            break}
+	          if {[string bytelength $requestBody] >= $contentLength} {
+	            break
+	          }
 	          append requestBody [read $socket $contentLength]
 	        }
 	      

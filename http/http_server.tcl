@@ -275,7 +275,9 @@ namespace eval ::trails::http {
             set crtl_instance [dict get $Controllers $ctrl]
           } else {
             set crtl_instance [$ctrl new]
-            dict set Controllers $ctrl $crtl_instance
+            $crtl_instance controller_configure
+            add_controller $crtl_instance
+            #dict set Controllers $ctrl $crtl_instance
           }
 
           set response [$crtl_instance dispatch_action $action $request]

@@ -39,7 +39,7 @@ source $::env(TRAILS_HOME)/http/router.tcl
 source $::env(TRAILS_HOME)/controllers/controller.tcl
 source $::env(TRAILS_HOME)/database/db.tcl
 
-namespace import ::trails::controllers::Controller
+namespace import ::trails::controllers::AppController
 
 namespace eval ::trails::app {
 	
@@ -51,9 +51,11 @@ namespace eval ::trails::app {
 		variable log
 		::trails::http::router::build_config_routes
 
-		foreach cls [info class subclasses Controller] {
+		foreach cls [info class subclasses AppController] {
 			set obj [$cls new]
+			$obj controller_configure
 			::trails::http::router::build_scaffold_routes [$obj get_routes]
+			::trails::http::add_controller $obj
 		}
 
 		::trails::http::router::print	

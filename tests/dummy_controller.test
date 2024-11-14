@@ -81,27 +81,27 @@ test dummy_controller_not_found_test {} -body {
 } -result {404}
 
 test dummy_controller_not_allowed_method {} -body { 
-	set dummy [DummyController new -scaffold false --allowed_methods {delete delete}]
+	set dummy [DummyController new -scaffold false -allowed-methods {delete delete}]
 	set request [Request new -method get]	
 	set response [$dummy dispatch_action delete $request]	
 	$response prop status
 } -result {405}
 
 test dummy_controller_allowed_method {} -body { 
-	set dummy [DummyController new -scaffold true --allowed_methods {delete delete,get}]
+	set dummy [DummyController new -scaffold true -allowed-methods {delete delete,get}]
 	set request [Request new -method get]	
 	set response [$dummy dispatch_action delete $request]	
 	$response prop status
 } -result {200}
 
 test dummy_controller_routes {} -body { 
-	set dummy [DummyController new -scaffold true --allowed_methods {delete delete,get}]
+	set dummy [DummyController new -scaffold true -allowed-methods {delete delete,get}]
 	set routes [$dummy get_routes]
 	llength $routes
 } -result {24}
 
 test dummy_controller_build_routes {} -body { 
-	set dummy [DummyController new -scaffold true --route_prefix {}]
+	set dummy [DummyController new -scaffold true -route-prefix {}]
 	set routes [$dummy get_routes]
 	::trails::http::router::build_scaffold_routes $routes
 	#::trails::http::router::print

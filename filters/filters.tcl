@@ -55,8 +55,6 @@ namespace eval ::filters {
 
 			my variable render_file render_text template_path
 
-			puts "ctype = [$response prop content-type]"
-
 			if {[$response prop content-type] == "text/html"} {
 
 				set ctx [$response prop ctx]
@@ -64,6 +62,9 @@ namespace eval ::filters {
 				if {[$response present tpl-name]} {
 					set file [$response prop tpl-name]
 					$response prop body [$render_file $template_path/$file $ctx]
+				} elseif {[$response present tpl-path]} {
+					set file [$response prop tpl-path]
+					$response prop body [$render_file $file $ctx]
 				} elseif {[$response present tpl-text]} {
 					set tpl [$response prop tpl-text]
 					$response prop body [$render_text $tpl $ctx]

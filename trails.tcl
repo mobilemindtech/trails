@@ -9,11 +9,24 @@ package require logger
 package require SimpleTemplater
 
 source $::env(TRAILS_HOME)/configs/configs.tcl
+source $::env(TRAILS_HOME)/dev/watch.tcl
+
 namespace import ::trails::configs::get_env
 
 namespace eval ::trails {}
 
 # load controllres
+
+foreach f [glob ./services/*.tcl] {
+	set fname [lindex [split $f /] end]
+	if {$fname != "service.tcl"} {
+		if {[get_env] == "dev"} {
+			puts "::> load service $f"
+		}
+		source $f
+	}
+}
+
 foreach f [glob ./controllers/*.tcl] {
 	set fname [lindex [split $f /] end]
 	if {$fname != "controller.tcl"} {
@@ -102,7 +115,6 @@ namespace eval ::trails::app {
 	    set params $argv
 
 	    if {$argc > 0 && [lindex $argv 0] == "--help"} {
-
             puts "::> Test usage:"
             puts "::> configure -file patternList"
             puts "::> configure -notfile patternList"
@@ -124,7 +136,46 @@ namespace eval ::trails::app {
 	}	
 }
 
+proc get_all_files_to_watch {path {files ""}} {
 
+	foreach f [exec {*}[list ls $path]] {	
+		set fpath $path/$f	
+		if {[file isdirectory $fpath]} {
+			set files [get_all_files_to_watch $fpath $files]
+		} else {
+			#puts "::> add file watch $fpath"
+			lappend files $fpath
+		}
+	}
+
+	return $files
+}
+
+proc app_restart {} {
+	set cmd [list $::argv0 {*}$::argv &]
+	exec {*}$cmd
+
+	
+	set cmd [list kill [pid]]	
+	exec {*}$cmd
+}
+
+proc watcher_start {} {	
+
+
+	set curr_path [file dirname [file normalize [info script]]]
+	set files [get_all_files_to_watch $curr_path]
+	set files [get_all_files_to_watch $curr_path/.tcl $files]
+
+	puts "::> watching changes into $curr_path"
+
+	foreach f $files {
+		watch::FSChange $f 1000 {
+	      	puts "::> file %O changed!"
+	      	app_restart
+	 	}
+ 	}
+}
 
 proc trails_run_app {} {
 	global argc
@@ -147,7 +198,8 @@ proc trails_run_app {} {
 		}
 		dev {
 			set ::env(ENV) dev
-			::trails::app::run	
+			watcher_start
+			::trails::app::run
 		}
 		test {
 			set ::env(ENV) test

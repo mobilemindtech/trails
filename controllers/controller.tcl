@@ -19,18 +19,16 @@ namespace eval ::trails::controllers {
 			# controller logger
 			variable Log 
 			# controller in debug mode, default is false
-			variable debug_mode
+			variable DebugMode
 
 			# if is scaffold controller, default is false. actions: create/:id|index/:id|save/:id|show/:id|edit/:id|update/:id|delete/:id
-			variable scaffold 
-			# service controler, find by servico with same controller name
-			variable service 
+			variable Scaffold 
 			# route path, default is controller name
-			variable route_path 
+			variable RoutePath 
 			# route prefix, default is empty. eg.: 
 			#/api/v2
 			#
-			variable route_prefix 
+			variable RoutePrefix 
 			# allowed methods. eg.: 
 			# {<action> <methods>}
 			# {	remove delete 
@@ -38,7 +36,7 @@ namespace eval ::trails::controllers {
 			#	save post 
 			#	update put}
 			#
-			variable allowed_methods 
+			variable AllowedMethods 
 			# filters to apply by action. filters are controller methods. eg: 
 			# { <action> {<method or proc> <filter type: enter|leave|recover> <methods: get|post|delete|put|*>} }
 			#{	index {JsonFilter leave *} 
@@ -46,52 +44,76 @@ namespace eval ::trails::controllers {
 			#	remove {ValidationExists enter post,get}
 			#   * {Other enter *}}
 			#
-			variable filters
+			variable Filters
 		}
 	}
 
 	oo::define AppController {
-
 		
-		constructor {} {			
+		constructor {args} {
+			my Merge_contoller_configs {*}$args
+		}		
+
+		method Get_contoller_configs {} {
+			set cls [info object class [self]]
+			dict get $::trails::controllers::CtrlConfigs $cls
+		}
+
+		method Merge_contoller_configs {args} {
+			set cls [info object class [self]]
+			set configs [dict get $::trails::controllers::CtrlConfigs $cls]
+
+			foreach {k v} $args {
+				dict set $configs $k $v
+			}
+
+			dict set ::trails::controllers::CtrlConfigs $cls $configs
 		}
 
 		method controller_configure {} {
- 			my variable Log scaffold service route_prefix allowed_methods route_path filters debug_mode
+ 			my variable Log Scaffold RoutePrefix AllowedMethods RoutePath Filters DebugMode
 			set Log [logger::init AppController]			
-			set scaffold false
-			set service {}
-			set route_prefix {}
-			set allowed_methods {}
-			set route_path {}
-			set debug_mode false
-			set filters {}
+			set Scaffold false
+			set RoutePrefix {}
+			set AllowedMethods {}
+			set RoutePath {}
+			set DebugMode false
+			set Filters {}
 
-			set cls [info object class [self]]
-			set params [dict get $::trails::controllers::CtrlConfigs $cls]
+			try {
+				set service_name [my Get_service_name]
+				set service_var_name [my Get_service_var_name]
+
+				if {[info object isa object ::services::$service_name]} {
+					oo::define [self class] variable $service_var_name
+					set $service_var_name [::services::$service_name new]
+				}
+
+			} on error err {
+				puts "::> error in inject service on controller: $err"
+			}
+
+			set params [my Get_contoller_configs]
 
 			foreach {k v} {*}$params {
 				switch -regexp -- $k {
 					-scaffold|scaffold {
-						set scaffold $v
+						set Scaffold $v
 					}
 					-route-prefix|route-prefix {
-						set route_prefix $v
-					}
-					-controller|controller {
-						set controller $v
+						set RoutePrefix $v
 					}
 					-allowed-methods|allowed-methods {
-						set allowed_methods $v
+						set AllowedMethods $v
 					}
 					-filters|filters {
-						set filters $v
+						set Filters $v
 					}
 					-route-path|route-path {
-						set route_path $v
+						set RoutePath $v
 					}
 					-debug-mode|debug-mode {
-						set route_path $v
+						set RoutePath $v
 					}
 				}				
 			}
@@ -107,16 +129,45 @@ namespace eval ::trails::controllers {
 			return "[string toupper [string index $action 0]][string range $action 1 end]"
 		}
 
+		method Get_controller_name {} {
+			set controller [info object class [self]]
+			string range [lindex [split $controller ::] end] 0 end-10
+		}
+
+		method Get_template_file {action} {
+			set controller [info object class [self]]
+			set folder [string toupper [string index $controller 0]][string range $controller 1 end]
+
+			if {[file exists ./views/$folder/$action.html]} {
+				return ./views/$folder/$action.html
+			} else {
+				if {[file exists ./.tcl/trails/templates/$action.html]} {
+					return ./.tcl/trails/templates/$action.html
+				}
+			}
+			return ""
+		}
+
+		method Get_service_name {} {
+			set controller_name [my Get_controller_name]			
+			return "${controller_name}Service"
+		}
+
+		method Get_service_var_name {} {
+			set controller_name [my Get_service_name]
+			return "[string tolower [string index $controller_name 0]][string range $controller_name 1 end]"
+		}
+
 		method get_routes {} {
-			my variable route_prefix route_path scaffold allowed_methods Log debug_mode
+			my variable RoutePrefix RoutePath Scaffold AllowedMethods Log DebugMode
 			set reserved_actions [list dispatch_action get_routes destroy render enter leave recover define]
-			set prefix $route_prefix
+			set prefix $RoutePrefix
 			set actions [my Get_actions]
 			set routes {}
 			set controller [info object class [self]]
 
-			if {$route_path == ""} {
-				set controller_name [string range [lindex [split $controller ::] end] 0 end-10]
+			if {$RoutePath == ""} {
+				set controller_name [my Get_controller_name]
 				set controller_name [string tolower $controller_name]
 
 				if {$controller_name == "index"} {
@@ -126,7 +177,7 @@ namespace eval ::trails::controllers {
 				}
 
 			} else {
-				set controller_name $route_path
+				set controller_name $RoutePath
 			}
 
 			if {$prefix != ""} {
@@ -136,7 +187,8 @@ namespace eval ::trails::controllers {
 
 			set scaffold_actions [list index save show edit update delete]
 
-			if {$scaffold} {
+			if {$Scaffold} {
+				# override default actions if need
 				foreach action $scaffold_actions {
 					if {[lsearch -exact $actions $action] == -1} {
 
@@ -146,16 +198,16 @@ namespace eval ::trails::controllers {
 							set route_action /
 						}
 
-						set idx [lsearch -exact $allowed_methods $action]
+						set idx [lsearch -exact $AllowedMethods $action]
 						set methods {}
 						if {$idx > -1} {
-							set methods [lindex $allowed_methods [incr $idx]]
+							set methods [lindex $AllowedMethods [incr $idx]]
 						}
 
 						set path $controller_name$route_action						
 						set method [my Get_scaffold_action_name $action]
 
-						if {$debug_mode} {
+						if {$DebugMode} {
 							${Log}::debug "::> add route $path => $controller $method, $methods"
 						}
 
@@ -170,7 +222,7 @@ namespace eval ::trails::controllers {
 							set path $controller_name$route_action/:id
 						}
 						
-						if {$debug_mode} {
+						if {$DebugMode} {
 							${Log}::debug "::> add route $path => $controller $method, $methods"
 						}
 						
@@ -182,6 +234,7 @@ namespace eval ::trails::controllers {
 				}
 			}
 
+			# get controllers actions
 			foreach action $actions {
 
 				set route_action /$action
@@ -194,16 +247,16 @@ namespace eval ::trails::controllers {
 					continue
 				}
 
-				set idx [lsearch -exact $allowed_methods $action]
+				set idx [lsearch -exact $AllowedMethods $action]
 				set methods {}
 				if {$idx > -1} {
-					set methods [lindex $allowed_methods [incr $idx]]
+					set methods [lindex $AllowedMethods [incr $idx]]
 				}
 
 				set path $controller_name$route_action
 				set method $action
 
-				if {$debug_mode} {
+				if {$DebugMode} {
 					${Log}::debug "::> add route $path => $controller $method, $methods"
 				}
 				
@@ -218,7 +271,7 @@ namespace eval ::trails::controllers {
 					set path $controller_name$route_action/:id
 				}
 
-				if {$debug_mode} {
+				if {$DebugMode} {
 					${Log}::debug "::> add route $path => $controller $method, $methods"
 				}
 				
@@ -234,11 +287,11 @@ namespace eval ::trails::controllers {
 		}
 
 		method Check_allowed_methods {action request} {
-			my variable allowed_methods
-			set idx [lsearch $allowed_methods $action]
+			my variable AllowedMethods
+			set idx [lsearch $AllowedMethods $action]
 
 			if {$idx > -1} {
-				set methods [lindex $allowed_methods [incr idx]]
+				set methods [lindex $AllowedMethods [incr idx]]
 				set methods [split $methods ,]
 				set method [$request prop method]
 				if {[lsearch -exact $methods $method] == -1} {
@@ -250,7 +303,7 @@ namespace eval ::trails::controllers {
 
 		method dispatch_action {action request} {
 
-			my variable scaffold
+			my variable Scaffold
 			set actions [my Get_actions]
 			set response {}		
 			set action_exec {}
@@ -267,7 +320,7 @@ namespace eval ::trails::controllers {
 					if {[lsearch -exact $actions $action] > -1} {
 						set action_exec $action
 					} else {
-						if {$scaffold} {
+						if {$Scaffold} {
 							set action_exec [my Get_scaffold_action_name $action]
 						}
 					}
@@ -287,11 +340,10 @@ namespace eval ::trails::controllers {
 			}
 
 			if {$action_exec != ""} {
-
-				set filters [my Get_filters $method]					
-				set fenter [dict get $filters enter]
-				set fleave [dict get $filters leave]
-				set frecover [dict get $filters recover]
+				set fts [my Get_filters $action $method]					
+				set fenter [dict get $fts enter]
+				set fleave [dict get $fts leave]
+				set frecover [dict get $fts recover]
 			
 				if {[llength $fenter] > 0} {
 					foreach enter_name $fenter { 
@@ -338,22 +390,21 @@ namespace eval ::trails::controllers {
 			return $response	
 		}
 
-		method Get_filters {method} {
-			my variable filters
+		method Get_filters {action method} {
+			my variable Filters
 
 			set filters_to_apply {}
-			set keys [dict keys $filters]
+			set keys [dict keys $Filters]
 
 			foreach key $keys {
 				if {$key == "*" || $key == $action} {
-					lappend filters_to_apply [dict get $filters $key]
+					lappend filters_to_apply [dict get $Filters $key]
 				}
 			}
 
 			set filter_enter {}
 			set filter_leave {}
 			set filter_recover {}
-
 
 			if {[llength $filters_to_apply] > 0} {
 
@@ -387,8 +438,8 @@ namespace eval ::trails::controllers {
 				}
 			} 
 
-			set methods [info object methods [self]]
-			
+			set methods [my Get_actions]
+
 			# apply default filter only custom filter not is defined
 			
 			if {[llength $filter_enter] == 0} {	
@@ -416,7 +467,26 @@ namespace eval ::trails::controllers {
 		}
 
 		method Index {request} {
-			Response new -status 200 -text index
+
+			set headers [$request prop headers]
+			set accept text/html
+
+			if {[dict exists $headers http-accept]} {
+				set accept [dict get headers http-accept]
+			} 
+
+			if {$accept == "applicaton/json"} {
+				# TODO render json
+			} else {
+
+				set template_file [my Get_template_file index]
+
+				if {[file isfile $template_file]} {
+					Response new -status 200 -tpl-path $template_file
+				} else {
+					Response new -status 200 -text "template not found"
+				}
+			}
 		}
 
 		method Save {request} {

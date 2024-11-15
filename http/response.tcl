@@ -26,6 +26,7 @@ namespace eval ::trails::http {
 								file \
 								websocket \
 								tpl-name \
+								tpl-path \
 								tpl-text \
 								tpl-json \
 								ctx]
@@ -73,6 +74,10 @@ namespace eval ::trails::http {
 					-tpl-name -
 					tpl-name {
 						my props tpl-name $v content-type {text/html}
+					}
+					-tpl-path -
+					tpl-path {
+						my props tpl-path $v content-type {text/html}
 					}
 					-tpl-text -
 					tpl-text {

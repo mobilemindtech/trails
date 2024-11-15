@@ -12,9 +12,9 @@ namespace eval ::trails::http::http_parser {
 	proc parse_request {socket} {
 	    # Default request data, they are overwritten if explicitly specified in 
 	    # the HTTP request
-	    set requestMethod ""
-	    set requestURI ""
-	    set requestProtocol ""
+	    set requestMethod {}
+	    set requestURI {}
+	    set requestProtocol {}
 	    set requestHeader [dict create \
 	    					connection "close" \
 	    					accept "text/plain" \
@@ -23,7 +23,8 @@ namespace eval ::trails::http::http_parser {
 	    set requestBody {}
 	    set requestQuery {}
 	    #set RequestAcceptGZip 0; # Indicates that the request accepts a gzipped response
-	    set state connecting # connecting header body
+
+	    set state connecting ; # connecting header body
 
 
 	    while {true} {

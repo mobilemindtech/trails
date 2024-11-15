@@ -145,6 +145,8 @@ namespace eval ::trails::http {
     try {
       set response [dispatch $request]
     } on error err {
+      puts "::> http_parser->dispatch erro: $err"
+      puts $::errorInfo
 
       foreach filter $Filters {
         set methods [info object methods $filter -all]
@@ -167,7 +169,6 @@ namespace eval ::trails::http {
       if {![info exists response]} {
         return -code error $err
       }
-
     }
  
     foreach filter $Filters {
@@ -180,14 +181,12 @@ namespace eval ::trails::http {
       }
     }      
 
-    foreach leave $filters_leave {        
+    foreach leave $filters_leave {  
       set response [$leave $request $response]
       if {![is_response $response]} {
         return -code error {wrong filter result}
       }
     }
-
-
 
     if {![is_response $response]} {
       return -code error {wrong response}
@@ -217,7 +216,7 @@ namespace eval ::trails::http {
       set path [::trails::configs::get public]
       set map {} 
       lappend map "/public" $path
-      return Response new -file [string map $map $path]
+      return [Response new -file [string map $map $path]]
 
     } else {
 
@@ -227,13 +226,13 @@ namespace eval ::trails::http {
 
         if { $route == "" } {
           ${log}::debug "404 $method $path"
-          return Response new -status 404 -content-type $contentType
+          return [Response new -status 404 -content-type $contentType]
         }
 
         set is_websocket [$route prop websocket]
 
         if { ![$route can_handle] && !$is_websocket } {
-          return Response new -status 500 -body {route can't be handled} -content-type $contentType
+          return [Response new -status 500 -body {route can't be handled} -content-type $contentType]
         }
 
         $request props \
@@ -252,12 +251,12 @@ namespace eval ::trails::http {
           } elseif {[info object class $next Response]} {
             return $next
           } else {
-            return Response new -status 500 -body {wrong filter return type} -content-type $contentType
+            return [Response new -status 500 -body {wrong filter return type} -content-type $contentType]
           }
         }
 
         if {$is_websocket} {
-          return Response new -websocket true
+          return [Response new -websocket true]
         }
         
 
@@ -283,7 +282,7 @@ namespace eval ::trails::http {
           set response [$crtl_instance dispatch_action $action $request]
 
         } else {
-          return Response new -status 500 -body {route handler not found} -content-type $contentType
+          return [Response new -status 500 -body {route handler not found} -content-type $contentType]
         }
 
         if {![info object isa object $response] || ![info object class $response Response]} {
@@ -295,7 +294,7 @@ namespace eval ::trails::http {
         foreach action $leave_handlers {
           set response [$action $request $response]  
           if {![info object class $response Response]} {
-            return Response new -status 500 -body {wrong filter return type} -content-type $contentType
+            return [Response new -status 500 -body {wrong filter return type} -content-type $contentType]
           }        
         }
 
@@ -304,7 +303,6 @@ namespace eval ::trails::http {
       } finally {
         if {[info exists route] && [info object isa object $route]} {
           $route destroy
-
         }      
       }
     }        

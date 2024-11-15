@@ -10,24 +10,15 @@ namespace import ::trails::controllers::Controller
 namespace eval ::controllers  {
 	catch {
 		oo::class create DummyController { 
-			superclass Controller
+			Controller {
+				scaffold true
+			}
 		}
 	}
 
 	oo::define DummyController {
 		constructor {args} {
 			next {*}$args
-
-			my variable scaffold
-			set scaffold true
-
-			foreach {k v} $args {
-				switch -regexp -- $k {
-					-scaffold|scaffold {
-						set scaffold $v
-					}
-				}
-			}
 		}
 
 		method MyFilterLeave {req resp} {

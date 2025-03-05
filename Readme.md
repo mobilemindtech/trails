@@ -41,6 +41,10 @@
 
 * Baseado em cron
 
+# Cache
+
+* Not implemented yet
+
 # Http
 
 * Multi thread (workers)

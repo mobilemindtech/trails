@@ -4,6 +4,7 @@ package require logger
 
 source $::env(TRAILS_HOME)/http/request.tcl
 source $::env(TRAILS_HOME)/http/response.tcl
+source $::env(TRAILS_HOME)/misc/props.tcl
 
 namespace import ::trails::http::Response
 namespace import ::trails::http::Request
@@ -16,6 +17,7 @@ namespace eval ::trails::controllers {
 	
 	catch {
 		oo::class create AppController {			
+			superclass Props
 			# controller logger
 			variable Log 
 			# controller in debug mode, default is false
@@ -51,6 +53,7 @@ namespace eval ::trails::controllers {
 	oo::define AppController {
 		
 		constructor {args} {
+			next -permits-new
 			my Merge_contoller_configs {*}$args
 		}		
 
@@ -466,6 +469,16 @@ namespace eval ::trails::controllers {
 				recover $filter_recover
 		}
 
+		method Render_default_action_tpl {action ctx} {
+			set template_file [my Get_template_file $action]
+
+			if {[file isfile $template_file]} {
+				Response new -status 200 -tpl-path $template_file -ctx $ctx
+			} else {
+				Response new -status 200 -text "template not found"
+			}			
+		}
+
 		method Index {request} {
 
 			set headers [$request prop headers]
@@ -477,15 +490,11 @@ namespace eval ::trails::controllers {
 
 			if {$accept == "applicaton/json"} {
 				# TODO render json
+				Response new -status 200 -text {render json not implemented}
 			} else {
-
-				set template_file [my Get_template_file index]
-
-				if {[file isfile $template_file]} {
-					Response new -status 200 -tpl-path $template_file
-				} else {
-					Response new -status 200 -text "template not found"
-				}
+				# TODO 
+				set ctx {}
+				[my Render_default_action_tpl $ctx]
 			}
 		}
 

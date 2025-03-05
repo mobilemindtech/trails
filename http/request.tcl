@@ -18,11 +18,16 @@ namespace eval ::trails::http {
 	oo::define Request {
 
 		constructor {args} {
-			my variable allowed_props
 			
-			set allowed_props [list method path raw_body body query params headers content-type roles]
-
-			next 
+			next method \
+				path \
+				raw_body \
+				body \
+				query \
+				params \
+				headers \
+				content-type \
+				roles
 
 			foreach {k v} $args {
 				switch -regexp -- $k {

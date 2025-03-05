@@ -16,23 +16,19 @@ namespace eval ::trails::http {
 	oo::define Response {
 
 		constructor {args} {
-			my variable allowed_props
-
-			set allowed_props [list \
-								body \
-								headers \
-								status \
-								content-type \
-								file \
-								websocket \
-								tpl-name \
-								tpl-path \
-								tpl-text \
-								tpl-json \
-								ctx]
 			
-			next
-
+			next body \
+				headers \
+				status \
+				content-type \
+				file \
+				websocket \
+				tpl-name \
+				tpl-path \
+				tpl-text \
+				tpl-json \
+				ctx
+			
 			foreach {k v} $args {
 				switch $k {
 					-status -

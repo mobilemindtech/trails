@@ -18,14 +18,14 @@ namespace eval ::trails::models {
 	catch {
 		oo::class create Model {
 			superclass Props
-			variable table_name allowed_props
+			variable table_name
 		} 
 	}
 
 	oo::define Model {
 
 		constructor {} {
-			my variable table_name allowed_props
+			my variable table_name
 			set allowed_props {}
 
 			set fields [my get_fields]
@@ -33,7 +33,7 @@ namespace eval ::trails::models {
 				lappend allowed_props $k
 			}
 			set table_name [my get_table_name]
-			next
+			next {*}$allowed_props
 		}
 
 		method get_table_name {} {

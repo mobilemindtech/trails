@@ -28,23 +28,19 @@ namespace eval ::trails::http::router {
 	oo::define Route {
 
 		constructor {} {
-			my variable allowed_props 
-			
-			set allowed_props [list routes \
-									roles \
-									methods \
-									handler \
-									enter \
-									leave \
-									websocket \
-									path \
-									controller \
-									action \
-									repath \
-									variables \
-									params]
-
-			next 
+			next routes \
+				roles \
+				methods \
+				handler \
+				enter \
+				leave \
+				websocket \
+				path \
+				controller \
+				action \
+				repath \
+				variables \
+				params
 		}
 
 		method has_subroutes {} {

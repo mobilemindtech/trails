@@ -2,12 +2,15 @@
 
 app:
   name: trails
-  description: TCL on Rails 
+  description: TCL on Rails
   entrypoint: 
   testdir: 
 
 dependencies:
   - https://github.com/mobilemindtech/tcl-simple-templater.git  
+  - https://github.com/mobilemindtech/tfast.git  
+  - https://github.com/mobilemindtech/tcl-request.git
+  - https://github.com/mobilemindtech/tcl-easy-beast.git  
 
 requirements:
   packages:

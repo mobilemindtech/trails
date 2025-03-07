@@ -1,10 +1,10 @@
-{% extends "main.html" %}
-{% block title %} Create {% endblock %}
-{% block head %}  {% endblock %}
+{% extends "../templates/main.html" %}
 
-{% block body %} 
-	create.html 
-	{% include "form.html" %}
-{% endblock %}
-	
-{% block script %}  {% endblock %}
+<form action="/__DOMAIN_VAR__/save" method="post">
+
+  {% include form.html %}
+
+  <button class="btn btn-primart">Create</button>
+  
+</form>
+

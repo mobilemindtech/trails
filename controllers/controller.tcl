@@ -12,6 +12,8 @@ namespace eval ::trails::controllers {
 
     variable CtrlConfigs
 
+    set CtrlConfigs {}
+
     #rename unknown __unknown__
     
     catch {
@@ -543,12 +545,9 @@ namespace eval ::trails::controllers {
 
     proc Controller {args} {
 	variable CtrlConfigs 
-	
 	uplevel 1 {superclass ::trails::controllers::AppController}		
-	
-	set CtrlConfigs {}
 	set cls [lindex [info level -1] 1]
-	dict set CtrlConfigs $cls $args
+	dict set CtrlConfigs $cls $args	puts ">> $CtrlConfigs"
     }
 
     namespace export Controller AppController

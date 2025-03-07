@@ -1,10 +1,12 @@
-{% extends "main.html" %}
-{% block title %} Edit {% endblock %}
-{% block head %}  {% endblock %}
+{% extends "../templates/main.html" %}
 
-{% block body %} 
-	edit.html 
-	{% include "form.html" %}
+{% block body %}
+
+<form action="/__DOMAIN_VAR__/update" method="put">
+  {% include form.html %}
+
+  <button class="btn btn-primart">Update</button>
+</form>
+
+
 {% endblock %}
-	
-{% block script %}  {% endblock %}

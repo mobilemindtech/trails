@@ -14,10 +14,13 @@ source $::env(TRAILS_HOME)/database/migrations.tcl
 source $::env(TRAILS_HOME)/controllers/controller.tcl
 source $::env(TRAILS_HOME)/services/service.tcl
 source $::env(TRAILS_HOME)/database/db.tcl
+source $::env(TRAILS_HOME)/template_generator.tcl
+source $::env(TRAILS_HOME)/domain/active_record.tcl
 
 namespace import ::trails::configs::*
 namespace import ::tfast::*
 namespace import ::trails::controllers::AppController
+namespace import ::trails::template::generator::*
 
 namespace eval ::trails {
     namespace export run_app
@@ -25,24 +28,28 @@ namespace eval ::trails {
 
 # load controllres
 
+foreach f [glob ./app/domain/*.tcl] {
+    set fname [file tail $f]
+    if {[config getenv] == "dev"} {
+	puts "::> load domain $f"
+    }
+    source $f
+}
+
 foreach f [glob ./app/services/*.tcl] {
     set fname [file tail $f]
-    if {$fname != "service.tcl"} {
-	if {[config getenv] == "dev"} {
-	    puts "::> load service $f"
-	}
-	source $f
+    if {[config getenv] == "dev"} {
+	puts "::> load service $f"
     }
+    source $f
 }
 
 foreach f [glob ./app/controllers/*.tcl] {
     set fname [file tail $f]
-    if {$fname != "controller.tcl"} {
-	if {[config getenv] == "dev"} {
-	    puts "::> load controller $f"
-	}
-	source $f
+    if {[config getenv] == "dev"} {
+	puts "::> load controller $f"
     }
+    source $f
 }
 
 # load filters
@@ -189,6 +196,19 @@ proc watcher_start {} {
     }
 }
 
+
+proc trails::show_usage {} {
+    puts "::"
+    puts ":: Usage:"
+    puts "::"
+    puts ":: migrate:  migrate database"
+    puts ":: dev:      run app prod mode"
+    puts ":: prod:     run app dev mode"
+    puts ":: test:     run app tests"
+    puts ":: generate <domain|service|controller|views|all> <domain name>: generate code by templates"
+    puts "::"
+}
+
 proc trails::run_app {} {
     global argc
     global argv
@@ -217,14 +237,47 @@ proc trails::run_app {} {
 	    set ::env(ENV) test
 	    ::trails::app::test	[expr {$argc - 1}] [lrange $argv 1 end]
 	}
+	generate {
+	    foreach {_ opt domain} $argv {
+
+		if {$opt == ""} {
+		    puts "::> invalid option"
+		    exit 1
+		}
+		
+		if {$domain == ""} {
+		    puts "::> domain name is required"
+		    exit 1
+		}
+
+		switch $opt {
+		    domain {
+			generate-domain $domain
+		    }
+		    service {
+			generate-service $domain
+		    }
+		    controller {
+			generate-controller $domain
+		    }
+		    views {
+			generate-views $domain
+		    }
+		    all {
+			generate-all $domain
+		    }
+		    default {
+			puts "::> invalid option"
+		    }
+		}
+		
+	    }
+	}
+	help {
+	    show_usage
+	}
 	default {
-	    puts "Usage:"
-	    puts ""
-	    puts ":: migrate => migrate database"
-	    puts ":: dev => run app prod mode"
-	    puts ":: prod => run app dev mode"
-	    puts ":: test => run app tests"
-	    puts ""
+	   show_usage
 	}
     }
 }

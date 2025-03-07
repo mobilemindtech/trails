@@ -4,117 +4,133 @@ package provide trails 0.1
 
 set ::env(TRAILS_HOME) [expr {[file exists "./.tcl/trails"] == 1 ? "./.tcl/trails" : "./"}]
 
-
+package require tfast
 package require logger
 package require SimpleTemplater
 
 source $::env(TRAILS_HOME)/configs/configs.tcl
 source $::env(TRAILS_HOME)/dev/watch.tcl
+source $::env(TRAILS_HOME)/database/migrations.tcl
+source $::env(TRAILS_HOME)/controllers/controller.tcl
+source $::env(TRAILS_HOME)/services/service.tcl
+source $::env(TRAILS_HOME)/database/db.tcl
 
-namespace import ::trails::configs::get_env
+namespace import ::trails::configs::*
+namespace import ::tfast::*
+namespace import ::trails::controllers::AppController
 
-namespace eval ::trails {}
+namespace eval ::trails {
+    namespace export run_app
+}
 
 # load controllres
 
-foreach f [glob ./services/*.tcl] {
-	set fname [lindex [split $f /] end]
-	if {$fname != "service.tcl"} {
-		if {[get_env] == "dev"} {
-			puts "::> load service $f"
-		}
-		source $f
+foreach f [glob ./app/services/*.tcl] {
+    set fname [file tail $f]
+    if {$fname != "service.tcl"} {
+	if {[config getenv] == "dev"} {
+	    puts "::> load service $f"
 	}
+	source $f
+    }
 }
 
-foreach f [glob ./controllers/*.tcl] {
-	set fname [lindex [split $f /] end]
-	if {$fname != "controller.tcl"} {
-		if {[get_env] == "dev"} {
-			puts "::> load controller $f"
-		}
-		source $f
+foreach f [glob ./app/controllers/*.tcl] {
+    set fname [file tail $f]
+    if {$fname != "controller.tcl"} {
+	if {[config getenv] == "dev"} {
+	    puts "::> load controller $f"
 	}
+	source $f
+    }
 }
 
 # load filters
 foreach f [glob $::env(TRAILS_HOME)/filters/*.tcl] {
-	set fname [lindex [split $f /] end]
-	if {[get_env] == "dev"} {
-		puts "::> load filter $f"
-	}
-	source $f
+    set fname [file tail $f]
+    if {[config getenv] == "dev"} {
+	puts "::> load filter $f"
+    }
+    source $f
 }
 
-source $::env(TRAILS_HOME)/database/migrations.tcl
-source $::env(TRAILS_HOME)/http/http_server.tcl
-source $::env(TRAILS_HOME)/http/router.tcl
-source $::env(TRAILS_HOME)/controllers/controller.tcl
-source $::env(TRAILS_HOME)/database/db.tcl
-
-namespace import ::trails::controllers::AppController
+namespace import ::trails::filters::*
 
 namespace eval ::trails::app {
 	
-	variable ServerSocket
+    variable log
+    set log [logger::init ::trails::app]
+
+    proc configure_routes {} {
 	variable log
-	set log [logger::init app]
 
-	proc configure_routes {} {
-		variable log
-		::trails::http::router::build_config_routes
-
-		foreach cls [info class subclasses AppController] {
-			set obj [$cls new]
-			$obj controller_configure
-			::trails::http::router::build_scaffold_routes [$obj get_routes]
-			::trails::http::add_controller $obj
-		}
-
-		::trails::http::router::print	
+	tfast register routes [config get web routes]
+	
+	foreach cls [info class subclasses AppController] {
+	    set obj [$cls new]
+	    $obj controller_configure
+	    tfast register scaffold $obj
 	}
 
-	proc http_serve {} {
+	tfast print -all
+    }
 
-		variable log
-		variable ServerSocket
+    proc configure_public {} {
 
-		set port [::trails::configs::get web server port]	
-		set workers [::trails::configs::get web server workers]
-		set pool_size [::trails::configs::get datasource [::trails::configs::get_env] pool_size]
+	set public_paths [config get web public assets]
+	set public_exts [config get web public extensions]
 
-		${log}::info "workers=$workers, pool size=$pool_size"
-		${log}::info "http server started on http://localhost:$port"
-
-
-		if {$workers > 1} {
-			httpworker::init $workers
-			set socket [socket -server httpworker::accept $port]  
-		} else {
-			::trails::database::pool::init $pool_size
-			::trails::http::init
-			set socket [socket -server ::trails::http::accept $port]  
-		}
-
-
-		set ServerSocket $socket
-
-		#websocket_init $socket
-
-		vwait forever	
+	foreach dir $public_paths {
+	    tfast register public dir $dir
 	}
+	tfast register public extension $public_exts	
+    }
+
+    proc register_filters {} {
+	tfast register filter instance [FilterJson new]
+	tfast register filter instance [FilterHtmlTemplate new]
+    }
+
+    proc http_serve {} {
+
+	variable log
+	variable ServerSocket
+
+	set port [config get web server port]	
+	set workers [config get web server workers]
+	set hostname [config get web server workers]
+	set backend [config get web server backend]
+	set pool_size [config get datasource [config getenv] pool_size]
+
+	
+	set backendfs .tcl/tfast/http/backend/$backend.tcl
+	uplevel #0 source $backendfs
+	
+	${log}::info "workers=$workers, pool size=$pool_size"
+	${log}::info "http server started on http://localhost:$port"
+
+	::trails::database::pool::init $pool_size
+
+	tfast serve \
+	    -port $port \
+	    -host $hostname \
+	    -workers $workers \
+	    -backend $backend       
+    }
 
 
-	proc run {} {		
-		configure_routes
-		http_serve
-	}
+    proc run {} {		
+	configure_public
+	register_filters
+	configure_routes
+	http_serve
+    }
 
-	proc test {argc argv} {
-	    
-	    set params $argv
+    proc test {argc argv} {
+	
+	set params $argv
 
-	    if {$argc > 0 && [lindex $argv 0] == "--help"} {
+	if {$argc > 0 && [lindex $argv 0] == "--help"} {
             puts "::> Test usage:"
             puts "::> configure -file patternList"
             puts "::> configure -notfile patternList"
@@ -126,91 +142,89 @@ namespace eval ::trails::app {
             puts "::> skip patternList = shortcut for configure -skip"
             puts "::> See more at https://wiki.tcl-lang.org/page/tcltest"
             return
-	    }
+	}
+	
+	set testdir $::env(TRAILS_HOME)/tests
 
-	    
-	    set testdir $::env(TRAILS_HOME)/tests
-
-	    set cmd [list sh -c "tclsh $testdir/all.tcl -testdir $testdir $params | tee /dev/tty"]
-	    exec {*}$cmd
-	}	
+	set cmd [list sh -c "tclsh $testdir/all.tcl -testdir $testdir $params | tee /dev/tty"]
+	exec {*}$cmd
+    }	
 }
 
 proc get_all_files_to_watch {path {files ""}} {
 
-	foreach f [exec {*}[list ls $path]] {	
-		set fpath $path/$f	
-		if {[file isdirectory $fpath]} {
-			set files [get_all_files_to_watch $fpath $files]
-		} else {
-			#puts "::> add file watch $fpath"
-			lappend files $fpath
-		}
+    foreach f [exec {*}[list ls $path]] {	
+	set fpath $path/$f	
+	if {[file isdirectory $fpath]} {
+	    set files [get_all_files_to_watch $fpath $files]
+	} else {
+	    #puts "::> add file watch $fpath"
+	    lappend files $fpath
 	}
+    }
 
-	return $files
+    return $files
 }
 
 proc app_restart {} {
-	set cmd [list $::argv0 {*}$::argv &]
-	exec {*}$cmd
+    set cmd [list $::argv0 {*}$::argv &]
+    exec {*}$cmd
 
-	
-	set cmd [list kill [pid]]	
-	exec {*}$cmd
+    set cmd [list kill [pid]]	
+    exec {*}$cmd
 }
 
 proc watcher_start {} {	
+    set curr_path [file dirname [file normalize [info script]]]
+    set files [get_all_files_to_watch $curr_path]
+    set files [get_all_files_to_watch $curr_path/.tcl $files]
 
+    puts "::> watching changes into $curr_path"
 
-	set curr_path [file dirname [file normalize [info script]]]
-	set files [get_all_files_to_watch $curr_path]
-	set files [get_all_files_to_watch $curr_path/.tcl $files]
-
-	puts "::> watching changes into $curr_path"
-
-	foreach f $files {
-		watch::FSChange $f 1000 {
-	      	puts "::> file %O changed!"
-	      	app_restart
-	 	}
- 	}
+    foreach f $files {
+	watch::FSChange $f 1000 {
+	    puts "::> file %O changed!"
+	    app_restart
+	}
+    }
 }
 
-proc trails_run_app {} {
-	global argc
-	global argv
-	set opt ""
+proc trails::run_app {} {
+    global argc
+    global argv
+    set opt ""
 
-	::trails::configs::init
+    config init
 
-	if {$argc > 0} {
-		set opt [lindex $argv 0]
+    if {$argc > 0} {
+	set opt [lindex $argv 0]
+    }
+
+    switch $opt {
+	migrate {
+	    ::trails::database::migrations::run
 	}
-
-	switch $opt {
-		migrate {
-			::trails::database::migrations::run
-		}
-		prod {
-			set ::env(ENV) prod
-			::trails::app::run	
-		}
-		dev {
-			set ::env(ENV) dev
-			watcher_start
-			::trails::app::run
-		}
-		test {
-			set ::env(ENV) test
-			::trails::app::test	[expr {$argc - 1}] [lrange $argv 1 end]
-		}
-		default {
-			puts "Usage:"
-			puts ":: migrate => migrate database"
-			puts ":: dev => run app prod mode"
-			puts ":: prod => run app dev mode"
-			puts ":: test => run app tests"
-		}
+	prod {
+	    set ::env(ENV) prod
+	    ::trails::app::run	
 	}
+	dev {
+	    set ::env(ENV) dev
+	    watcher_start
+	    ::trails::app::run
+	}
+	test {
+	    set ::env(ENV) test
+	    ::trails::app::test	[expr {$argc - 1}] [lrange $argv 1 end]
+	}
+	default {
+	    puts "Usage:"
+	    puts ""
+	    puts ":: migrate => migrate database"
+	    puts ":: dev => run app prod mode"
+	    puts ":: prod => run app dev mode"
+	    puts ":: test => run app tests"
+	    puts ""
+	}
+    }
 }

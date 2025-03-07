@@ -11,7 +11,7 @@ namespace eval ::trails::database::pool {
   variable log
   variable showsql
   set MysqlPool [list]
-  set log [logger::init pool]
+  set log [logger::init ::trails::database::pool]
 
   namespace export acquire release show_sql
 
@@ -32,7 +32,7 @@ namespace eval ::trails::database::pool {
     variable log
     variable showsql
 
-    set showsql [get_cfg datasource [get_env] show_sql]
+    set showsql [config get datasource [config getenv] show_sql]
     set id [llength $MysqlPool]
 
     for {set i 0} {$i < $count} {incr i} {
@@ -111,7 +111,7 @@ namespace eval ::trails::database::pool {
     variable log
     set dbhandle {}
     set result [ResultSet new]
-    set params [get_cfg datasource [get_env] database]
+    set params [config get datasource [config getenv] database]
     set user [dict get $params user]
     set password [dict get $params password]
     set database [dict get $params db]

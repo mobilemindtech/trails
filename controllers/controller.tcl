@@ -55,15 +55,15 @@ namespace eval ::trails::controllers {
 	
 	constructor {args} {
 	    next -permits-new
-	    my Merge_contoller_configs {*}$args
+	    my Merge_controller_configs {*}$args
 	}		
 
-	method Get_contoller_configs {} {
+	method Get_controller_configs {} {
 	    set cls [info object class [self]]
 	    dict get $::trails::controllers::CtrlConfigs $cls
 	}
 
-	method Merge_contoller_configs {args} {
+	method Merge_controller_configs {args} {
 	    set cls [info object class [self]]
 	    set configs [dict get $::trails::controllers::CtrlConfigs $cls]
 
@@ -97,8 +97,7 @@ namespace eval ::trails::controllers {
 		puts "::> error in inject service on controller: $err"
 	    }
 
-	    set params [my Get_contoller_configs]
-
+	    set params [my Get_controller_configs]
 	    foreach {k v} {*}$params {
 		switch -regexp -- $k {
 		    -scaffold|scaffold {
@@ -125,7 +124,14 @@ namespace eval ::trails::controllers {
 
 	# list controller actions
 	method Get_actions {} {
-	    info object methods [self] -all
+	    #info object methods [self] -all
+
+	    # Obtém a classe do objeto chamador
+	    set childClass [info object class [self]]
+
+	    # Obtém todos os métodos da classe
+	    info class methods $childClass
+
 	}
 
 	# list default scaffold actions
@@ -547,7 +553,7 @@ namespace eval ::trails::controllers {
 	variable CtrlConfigs 
 	uplevel 1 {superclass ::trails::controllers::AppController}		
 	set cls [lindex [info level -1] 1]
-	dict set CtrlConfigs $cls $args	puts ">> $CtrlConfigs"
+	dict set CtrlConfigs $cls $args
     }
 
     namespace export Controller AppController
